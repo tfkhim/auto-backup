@@ -22,6 +22,10 @@ class Config(object):
     def recipient(self):
         return self._config["XMPP"]["recipient"]
 
+    @property
+    def tasks(self):
+        return list(self._config["tasks"])
+
 class Notifications(object):
     def __init__(self, config):
         self.sender = config.account
@@ -49,8 +53,30 @@ class Notifications(object):
             message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
 
+class RcloneTask(object):
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __str__(self):
+        return self.name
+
+    def execute(self):
+        pass
+
+def create_task(config):
+    typeMap = {
+        "rclone" : RcloneTask
+    }
+    return typeMap[config["type"]](**config)
+
 if __name__ == "__main__":
     config = Config(sys.argv[1])
     notify = Notifications(config)
+
+    tasks = list(map(create_task, config.tasks))
+
+    for task in tasks:
+        task.execute()
 
     notify.send("Backup successful")
