@@ -76,13 +76,21 @@ def create_task(config):
     }
     return typeMap[config["type"]](**config)
 
+def safe_execute(task, notify):
+    try:
+        task.execute()
+        return 0
+    except:
+        notify.send("Task failed: {}".format(task))
+        return 1
+
 if __name__ == "__main__":
     config = Config(sys.argv[1])
     notify = Notifications(config)
 
     tasks = list(map(create_task, config.tasks))
 
-    for task in tasks:
-        task.execute()
+    numFailed = sum(map(lambda t: safe_execute(t, notify), tasks))
 
-    notify.send("Backup successful")
+    if numFailed == 0:
+        notify.send("Backup successful")
