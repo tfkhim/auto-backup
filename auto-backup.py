@@ -24,7 +24,7 @@ class Config(object):
 
     @property
     def tasks(self):
-        return list(self._config["tasks"])
+        return self._config.get("tasks", [])
 
 class Notifications(object):
     def __init__(self, config):
