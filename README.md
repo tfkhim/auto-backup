@@ -5,4 +5,4 @@ together with local data using borgbackup CLI.
 ### Dependencies
 
 - aioxmpp >= 0.10.5 for notifications
-
+- toml >= 0.10.0 as configuration file format
