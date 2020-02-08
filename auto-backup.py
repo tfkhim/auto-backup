@@ -10,7 +10,7 @@ class Config(object):
         self._config = toml.load(tomlFile)
 
     @property
-    def account_name(self):
+    def account(self):
         return self._config["XMPP"]["account"]
 
     @property
@@ -21,23 +21,30 @@ class Config(object):
     def recipient(self):
         return self._config["XMPP"]["recipient"]
 
-async def send_notification(sender, password, recipient, msgStr):
-    jid = jid = aioxmpp.JID.fromstr(sender)
-    sec_layer = aioxmpp.make_security_layer(password)
-    recipient_jid = aioxmpp.JID.fromstr(recipient)
+class Notifications(object):
+    def __init__(self, config):
+        self.sender = config.account
+        self.password = config.password
+        self.recipient = config.recipient
 
-    client = aioxmpp.PresenceManagedClient(jid, sec_layer)
+    async def __sendImpl(self, message):
+        jid = jid = aioxmpp.JID.fromstr(self.sender)
+        sec_layer = aioxmpp.make_security_layer(self.password)
+        recipient_jid = aioxmpp.JID.fromstr(self.recipient)
 
-    async with client.connected() as stream:
-        msg = aioxmpp.Message(to=recipient_jid, type_=aioxmpp.MessageType.CHAT)
+        client = aioxmpp.PresenceManagedClient(jid, sec_layer)
 
-        msg.body[None] = msgStr
+        async with client.connected() as stream:
+            xmppMsg = aioxmpp.Message(to=recipient_jid, type_=aioxmpp.MessageType.CHAT)
 
-        await client.send(msg)
+            xmppMsg.body[None] = message
+
+            await client.send(xmppMsg)
+
+    def send(self, message):
+        asyncio.run(self.__sendImpl(message))
 
 if __name__ == "__main__":
     config = Config(sys.argv[1])
-
-    msg = "XMPP Hello World!"
-
-    asyncio.run(send_notification(config.account_name, config.password, config.recipient, msg))
+    notify = Notifications(config)
+    notify.send("XMPP Hello World!")
