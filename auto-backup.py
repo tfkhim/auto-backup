@@ -52,4 +52,5 @@ class Notifications(object):
 if __name__ == "__main__":
     config = Config(sys.argv[1])
     notify = Notifications(config)
-    notify.send("XMPP Hello World!")
+
+    notify.send("Backup successful")
