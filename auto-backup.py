@@ -53,7 +53,7 @@ class Notifications(object):
             message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
 
-class RcloneTask(object):
+class TaskBase(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -61,12 +61,18 @@ class RcloneTask(object):
     def __str__(self):
         return self.name
 
+class TestFailTask(TaskBase):
+    def execute(self):
+        raise RuntimeError("Task failed")
+
+class RcloneTask(TaskBase):
     def execute(self):
         pass
 
 def create_task(config):
     typeMap = {
-        "rclone" : RcloneTask
+        "testfail" : TestFailTask,
+        "rclone"   : RcloneTask
     }
     return typeMap[config["type"]](**config)
 
