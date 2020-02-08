@@ -4,6 +4,7 @@ import sys
 import toml
 import asyncio
 import aioxmpp
+import datetime
 
 class Config(object):
     def __init__(self, tomlFile):
@@ -41,7 +42,11 @@ class Notifications(object):
 
             await client.send(xmppMsg)
 
-    def send(self, message):
+    def send(self, message, with_time=True):
+        if with_time:
+            now = datetime.datetime.now()
+            timestamp = now.strftime("")
+            message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
 
 if __name__ == "__main__":
