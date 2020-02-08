@@ -7,5 +7,5 @@ setup(
     version = "0.1",
     py_modules = ["auto-backup"],
 
-    install_requires = ["aioxmpp>=0.10.5"]
+    install_requires = ["aioxmpp>=0.10.5", "toml>=0.10.0"]
 )

@@ -1,8 +1,25 @@
 #!/usr/bin/env python
 
 import sys
+import toml
 import asyncio
 import aioxmpp
+
+class Config(object):
+    def __init__(self, tomlFile):
+        self._config = toml.load(tomlFile)
+
+    @property
+    def account_name(self):
+        return self._config["XMPP"]["account"]
+
+    @property
+    def password(self):
+        return self._config["XMPP"]["password"]
+
+    @property
+    def recipient(self):
+        return self._config["XMPP"]["recipient"]
 
 async def send_notification(sender, password, recipient, msgStr):
     jid = jid = aioxmpp.JID.fromstr(sender)
@@ -19,9 +36,8 @@ async def send_notification(sender, password, recipient, msgStr):
         await client.send(msg)
 
 if __name__ == "__main__":
+    config = Config(sys.argv[1])
+
     msg = "XMPP Hello World!"
 
-    import getpass
-    password = getpass.getpass()
-
-    asyncio.run(send_notification(sys.argv[1], password, sys.argv[2], msg))
+    asyncio.run(send_notification(config.account_name, config.password, config.recipient, msg))
