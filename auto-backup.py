@@ -6,7 +6,28 @@ import asyncio
 import aioxmpp
 import datetime
 
+class TaskBase(object):
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __str__(self):
+        return self.name
+
+class TestFailTask(TaskBase):
+    def execute(self):
+        raise RuntimeError("Task failed")
+
+class RcloneTask(TaskBase):
+    def execute(self):
+        pass
+
 class Config(object):
+    TASK_FACTORIES={
+        "testfail" : TestFailTask,
+        "rclone"   : RcloneTask
+    }
+
     def __init__(self, tomlFile):
         self._config = toml.load(tomlFile)
 
@@ -24,7 +45,11 @@ class Config(object):
 
     @property
     def tasks(self):
-        return self._config.get("tasks", [])
+        def make_task(taskConf):
+            factory = Config.TASK_FACTORIES[taskConf["type"]]
+            return factory(**taskConf)
+
+        return list(map(make_task, self._config.get("tasks", [])))
 
 class Notifications(object):
     def __init__(self, config):
@@ -53,29 +78,6 @@ class Notifications(object):
             message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
 
-class TaskBase(object):
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def __str__(self):
-        return self.name
-
-class TestFailTask(TaskBase):
-    def execute(self):
-        raise RuntimeError("Task failed")
-
-class RcloneTask(TaskBase):
-    def execute(self):
-        pass
-
-def create_task(config):
-    typeMap = {
-        "testfail" : TestFailTask,
-        "rclone"   : RcloneTask
-    }
-    return typeMap[config["type"]](**config)
-
 def safe_execute(task, notify):
     try:
         task.execute()
@@ -88,9 +90,7 @@ if __name__ == "__main__":
     config = Config(sys.argv[1])
     notify = Notifications(config)
 
-    tasks = list(map(create_task, config.tasks))
-
-    numFailed = sum(map(lambda t: safe_execute(t, notify), tasks))
+    numFailed = sum(map(lambda t: safe_execute(t, notify), config.tasks))
 
     if numFailed == 0:
         notify.send("Backup successful")
