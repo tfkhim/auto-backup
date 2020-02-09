@@ -2,6 +2,7 @@
 
 import sys
 import toml
+import copy
 import asyncio
 import aioxmpp
 import datetime
@@ -46,8 +47,10 @@ class Config(object):
     @property
     def tasks(self):
         def make_task(taskConf):
-            factory = Config.TASK_FACTORIES[taskConf["type"]]
-            return factory(**taskConf)
+            tType = taskConf["type"]
+            conf = copy.copy(self._config.get(tType, {}))
+            conf.update(taskConf)
+            return Config.TASK_FACTORIES[tType](**conf)
 
         return list(map(make_task, self._config.get("tasks", [])))
 
