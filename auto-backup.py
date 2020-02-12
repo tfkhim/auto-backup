@@ -7,6 +7,7 @@ import asyncio
 import aioxmpp
 import datetime
 import traceback
+import subprocess
 
 class TaskBase(object):
     def __init__(self, **kwargs):
@@ -31,7 +32,16 @@ class TestFailTask(TaskBase):
 
 class RcloneTask(TaskBase):
     def execute(self):
-        pass
+        args = (
+            "rclone",
+            "--verbose",
+            "--config", self.configFile,
+            "sync",
+            self.source,
+            self.destination
+        )
+
+        subprocess.run(args, check=True)
 
 class Config(object):
     TASK_FACTORIES={
