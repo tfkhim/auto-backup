@@ -15,6 +15,14 @@ class TaskBase(object):
     def __str__(self):
         return self.name
 
+    def safe_execute(self, notify):
+        try:
+            self.execute()
+            return 0
+        except:
+            notify.send("Task failed: {}".format(self))
+            return 1
+
 class TestFailTask(TaskBase):
     def execute(self):
         raise RuntimeError("Task failed")
@@ -81,19 +89,11 @@ class Notifications(object):
             message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
 
-def safe_execute(task, notify):
-    try:
-        task.execute()
-        return 0
-    except:
-        notify.send("Task failed: {}".format(task))
-        return 1
-
 if __name__ == "__main__":
     config = Config(sys.argv[1])
     notify = Notifications(config)
 
-    numFailed = sum(map(lambda t: safe_execute(t, notify), config.tasks))
+    numFailed = sum(map(lambda t: t.safe_execute(notify), config.tasks))
 
     if numFailed == 0:
         notify.send("Backup successful")
