@@ -6,6 +6,7 @@ import copy
 import asyncio
 import aioxmpp
 import datetime
+import traceback
 
 class TaskBase(object):
     def __init__(self, **kwargs):
@@ -20,6 +21,7 @@ class TaskBase(object):
             self.execute()
             return 0
         except:
+            traceback.print_exc()
             notify.send("Task failed: {}".format(self))
             return 1
 
