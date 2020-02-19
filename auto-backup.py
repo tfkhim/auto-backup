@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import toml
 import copy
 import asyncio
 import aioxmpp
 import datetime
+import itertools
 import traceback
 import subprocess
 
@@ -45,10 +47,33 @@ class RcloneTask(TaskBase):
 
         subprocess.run(args, check=True)
 
+class BackupTask(TaskBase):
+    def execute(self):
+        archive = "{}::{{hostname}}-{{now}}".format(self.repository)
+
+        excludes = zip(itertools.repeat("--exclude"), self.excludes)
+        excludes = itertools.chain.from_iterable(excludes)
+
+        args = (
+            "borgbackup",
+            "--verbose",
+            "create",
+            *excludes,
+            archive,
+            "."
+        )
+
+        env = os.environ.copy()
+        env["BORG_PASSPHRASE"] = self.password
+        env["BORG_RSH"] = self.sshCommand
+
+        subprocess.run(args, cwd=self.source, env=env, check=True)
+
 class Config(object):
     TASK_FACTORIES={
         "testfail" : TestFailTask,
-        "rclone"   : RcloneTask
+        "rclone"   : RcloneTask,
+        "backup"   : BackupTask
     }
 
     def __init__(self, tomlFile):
