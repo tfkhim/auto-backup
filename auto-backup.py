@@ -4,6 +4,7 @@ import os
 import sys
 import toml
 import copy
+import json
 import asyncio
 import aioxmpp
 import datetime
@@ -70,11 +71,41 @@ class BackupTask(TaskBase):
 
         subprocess.run(args, cwd=self.source, env=env, check=True)
 
+class CheckBackups(TaskBase):
+    def countOne(self, repository, password):
+        args = (
+            "borg",
+            "list",
+            "--json",
+            repository
+        )
+
+        env = os.environ.copy()
+        env["BORG_PASSPHRASE"] = password
+        env["BORG_RSH"] = self.sshCommand
+
+        result = subprocess.run(args, env=env, check=True, capture_output=True)
+
+        startDates = map(lambda a: a["start"], json.loads(result.stdout)["archives"])
+        startDates = map(datetime.datetime.fromisoformat, startDates)
+
+        today = datetime.date.today()
+        return sum(map(lambda d: 1 if d.date() == today else 0, startDates))
+
+    def execute(self):
+        def formatLine(repo):
+            numBackups = self.countOne(repo["url"], repo["password"])
+            return "{}: {} (today)".format(repo["name"], numBackups)
+        lines = [formatLine(repo) for repo in self.repositories]
+
+        self.notify.send("Backup check results:\n{} ".format("\n".join(lines)))
+
 class Config(object):
     TASK_FACTORIES={
         "testfail" : TestFailTask,
         "rclone"   : RcloneTask,
-        "backup"   : BackupTask
+        "backup"   : BackupTask,
+        "check"    : CheckBackups
     }
 
     def __init__(self, tomlFile):
