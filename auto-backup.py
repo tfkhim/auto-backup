@@ -12,8 +12,9 @@ import traceback
 import subprocess
 
 class TaskBase(object):
-    def __init__(self, *, name, **kwargs):
+    def __init__(self, *, name, notify, **kwargs):
         self.name = name
+        self.notify = notify
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -21,13 +22,13 @@ class TaskBase(object):
     def __str__(self):
         return self.name
 
-    def safe_execute(self, notify):
+    def safe_execute(self):
         try:
             self.execute()
             return 0
         except:
             traceback.print_exc()
-            notify.send("Task failed: {}".format(self))
+            self.notify.send("Task failed: {}".format(self))
             return 1
 
 class TestFailTask(TaskBase):
@@ -92,6 +93,7 @@ class Config(object):
             tType = taskConf["type"]
             conf = copy.copy(self._config.get(tType, {}))
             conf.update(taskConf)
+            conf["notify"] = self.notify
             return Config.TASK_FACTORIES[tType](**conf)
 
         return list(map(make_task, self._config.get("tasks", [])))
@@ -126,7 +128,7 @@ class Notifications(object):
 if __name__ == "__main__":
     config = Config(sys.argv[1])
 
-    numFailed = sum(map(lambda t: t.safe_execute(config.notify), config.tasks))
+    numFailed = sum(map(lambda t: t.safe_execute(), config.tasks))
 
     if numFailed == 0:
         config.notify.send("Backup successful")
