@@ -89,14 +89,16 @@ class CheckBackups(TaskBase):
         startDates = map(lambda a: a["start"], json.loads(result.stdout)["archives"])
         startDates = list(map(datetime.datetime.fromisoformat, startDates))
 
-        today = datetime.date.today()
-        numToday = sum(map(lambda d: 1 if d.date() == today else 0, startDates))
-        return (numToday, len(startDates))
+        now = datetime.datetime.now()
+        oneDay = datetime.timedelta(days=1)
+        numOneDay = sum(map(lambda d: 1 if now - d < oneDay else 0, startDates))
+
+        return (numOneDay, len(startDates))
 
     def execute(self):
         def formatLine(repo):
             numToday, total = self.countOne(repo["url"], repo["password"])
-            return "{}: {} (today) {} (total)".format(repo["name"], numToday, total)
+            return "{}: {} (24h) {} (total)".format(repo["name"], numToday, total)
         lines = [formatLine(repo) for repo in self.repositories]
 
         self.notify.send("Backup check results:\n{} ".format("\n".join(lines)))
