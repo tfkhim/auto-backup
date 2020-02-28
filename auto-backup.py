@@ -78,18 +78,13 @@ class Config(object):
 
     def __init__(self, tomlFile):
         self._config = toml.load(tomlFile)
+        self._notify = None
 
     @property
-    def account(self):
-        return self._config["XMPP"]["account"]
-
-    @property
-    def password(self):
-        return self._config["XMPP"]["password"]
-
-    @property
-    def recipient(self):
-        return self._config["XMPP"]["recipient"]
+    def notify(self):
+        if not self._notify:
+            self._notify = Notifications(**self._config["XMPP"])
+        return self._notify
 
     @property
     def tasks(self):
@@ -102,10 +97,10 @@ class Config(object):
         return list(map(make_task, self._config.get("tasks", [])))
 
 class Notifications(object):
-    def __init__(self, config):
-        self.sender = config.account
-        self.password = config.password
-        self.recipient = config.recipient
+    def __init__(self, account, password, recipient):
+        self.sender = account
+        self.password = password
+        self.recipient = recipient
 
     async def __sendImpl(self, message):
         jid = jid = aioxmpp.JID.fromstr(self.sender)
@@ -130,9 +125,8 @@ class Notifications(object):
 
 if __name__ == "__main__":
     config = Config(sys.argv[1])
-    notify = Notifications(config)
 
-    numFailed = sum(map(lambda t: t.safe_execute(notify), config.tasks))
+    numFailed = sum(map(lambda t: t.safe_execute(config.notify), config.tasks))
 
     if numFailed == 0:
-        notify.send("Backup successful")
+        config.notify.send("Backup successful")
