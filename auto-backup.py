@@ -159,7 +159,5 @@ class Notifications(object):
 if __name__ == "__main__":
     config = Config(sys.argv[1])
 
-    numFailed = sum(map(lambda t: t.safe_execute(), config.tasks))
-
-    if numFailed == 0:
-        config.notify.send("Backup successful")
+    for task in config.tasks:
+        task.safe_execute()
