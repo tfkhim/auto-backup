@@ -64,7 +64,7 @@ class BackupTask(TaskBase):
         excludes = itertools.chain.from_iterable(excludes)
 
         args = (
-            "borgbackup",
+            "borg",
             "--verbose",
             "create",
             *excludes,
