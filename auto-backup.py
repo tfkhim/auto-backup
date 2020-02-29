@@ -13,11 +13,11 @@ import traceback
 import subprocess
 
 class TaskBase(object):
-    def __init__(self, *, name, notify, **kwargs):
-        self.name = name
+    def __init__(self, taskConfig, notify, *args, **kwargs):
+        self.name = taskConfig.pop("name")
         self.notify = notify
 
-        for key, value in kwargs.items():
+        for key, value in taskConfig.items():
             setattr(self, key, value)
 
     def __str__(self):
@@ -113,6 +113,7 @@ class Config(object):
 
     def __init__(self, tomlFile):
         self._config = toml.load(tomlFile)
+        self._tasks = self._config.pop("tasks", [])
         self._notify = None
 
     @property
@@ -125,12 +126,11 @@ class Config(object):
     def tasks(self):
         def make_task(taskConf):
             tType = taskConf["type"]
-            conf = copy.copy(self._config.get(tType, {}))
-            conf.update(taskConf)
-            conf["notify"] = self.notify
-            return Config.TASK_FACTORIES[tType](**conf)
+            fullTaskConf = copy.copy(self._config.get(tType, {}))
+            fullTaskConf.update(taskConf)
+            return Config.TASK_FACTORIES[tType](fullTaskConf, self.notify, self._config)
 
-        return list(map(make_task, self._config.get("tasks", [])))
+        return list(map(make_task, self._tasks))
 
 class Notifications(object):
     def __init__(self, account, password, recipient):
