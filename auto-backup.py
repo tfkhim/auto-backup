@@ -7,6 +7,7 @@ import copy
 import json
 import asyncio
 import aioxmpp
+import argparse
 import datetime
 import itertools
 import traceback
@@ -172,7 +173,12 @@ class Notifications(object):
         asyncio.run(self.__sendImpl(message))
 
 if __name__ == "__main__":
-    config = Config(sys.argv[1])
+    parser = argparse.ArgumentParser(description="Execute backup tasks")
+    parser.add_argument("config", nargs=1)
+
+    args = parser.parse_args()
+
+    config = Config(args.config)
 
     for task in config.tasks:
         task.safe_execute()
