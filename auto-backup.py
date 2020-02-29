@@ -16,6 +16,7 @@ import subprocess
 class TaskBase(object):
     def __init__(self, taskConfig, notify, *args, **kwargs):
         self.name = taskConfig.pop("name")
+        self.tags = set(taskConfig.pop("tags"))
         self.notify = notify
 
         for key, value in taskConfig.items():
@@ -23,6 +24,9 @@ class TaskBase(object):
 
     def __str__(self):
         return self.name
+
+    def isActive(self, activeTags):
+        return not self.tags.isdisjoint(activeTags)
 
     def safe_execute(self):
         try:
@@ -174,11 +178,17 @@ class Notifications(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Execute backup tasks")
+    parser.add_argument("--tag", dest="tags", action="append")
     parser.add_argument("config", nargs=1)
 
     args = parser.parse_args()
 
     config = Config(args.config)
 
-    for task in config.tasks:
+    tasks = config.tasks
+
+    if args.tags:
+        tasks = [t for t in tasks if t.isActive(args.tags)]
+
+    for task in tasks:
         task.safe_execute()
