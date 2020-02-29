@@ -50,8 +50,15 @@ class RcloneTask(TaskBase):
         subprocess.run(args, check=True)
 
 class BackupTask(TaskBase):
+    def __init__(self, taskConfig, notify, config):
+        super().__init__(taskConfig, notify)
+
+        repoConf = config["repositories"][self.repository]
+        self.url = repoConf["url"]
+        self.password = repoConf["password"]
+
     def execute(self):
-        archive = "{}::{{hostname}}-{{now}}".format(self.repository)
+        archive = "{}::{{hostname}}-{{now}}".format(self.url)
 
         excludes = zip(itertools.repeat("--exclude"), self.excludes)
         excludes = itertools.chain.from_iterable(excludes)
@@ -72,6 +79,11 @@ class BackupTask(TaskBase):
         subprocess.run(args, cwd=self.source, env=env, check=True)
 
 class CheckBackups(TaskBase):
+    def __init__(self, taskConfig, notify, config):
+        super().__init__(taskConfig, notify)
+
+        self.repositories = [dict(name=name, **config["repositories"][name]) for name in self.repositories]
+
     def countOne(self, repository, password):
         args = (
             "borg",
