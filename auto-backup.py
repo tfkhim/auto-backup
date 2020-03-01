@@ -79,7 +79,9 @@ class BackupTask(TaskBase):
 
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
-        env["BORG_RSH"] = self.sshCommand
+
+        if hasattr(self, "sshCommand"):
+            env["BORG_RSH"] = self.sshCommand
 
         subprocess.run(args, cwd=self.source, env=env, check=True)
 
@@ -113,7 +115,9 @@ class PruneBackups(TaskBase):
 
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
-        env["BORG_RSH"] = self.sshCommand
+
+        if hasattr(self, "sshCommand"):
+            env["BORG_RSH"] = self.sshCommand
 
         subprocess.run(args, env=env, check=True)
 
@@ -133,7 +137,9 @@ class CheckBackups(TaskBase):
 
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = password
-        env["BORG_RSH"] = self.sshCommand
+
+        if hasattr(self, "sshCommand"):
+            env["BORG_RSH"] = self.sshCommand
 
         result = subprocess.run(args, env=env, check=True, capture_output=True)
 
