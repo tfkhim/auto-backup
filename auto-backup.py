@@ -83,6 +83,40 @@ class BackupTask(TaskBase):
 
         subprocess.run(args, cwd=self.source, env=env, check=True)
 
+class PruneBackups(TaskBase):
+    def __init__(self, taskConfig, notify, config):
+        super().__init__(taskConfig, notify)
+
+        repoConf = config["repositories"][self.repository]
+        self.url = repoConf["url"]
+        self.password = repoConf["password"]
+
+    def execute(self):
+        args = [
+            "borg",
+            "--verbose",
+            "prune",
+            "--list"
+        ]
+
+        if getattr(self, "dryRun", False):
+            args.append("--dry-run")
+        else:
+            args.append("--stats")
+
+        for flag in ("within", "daily", "weekly", "monthly"):
+            if hasattr(self, flag):
+                args.append("--keep-{}".format(flag))
+                args.append(str(getattr(self, flag)))
+
+        args.append(self.url)
+
+        env = os.environ.copy()
+        env["BORG_PASSPHRASE"] = self.password
+        env["BORG_RSH"] = self.sshCommand
+
+        subprocess.run(args, env=env, check=True)
+
 class CheckBackups(TaskBase):
     def __init__(self, taskConfig, notify, config):
         super().__init__(taskConfig, notify)
@@ -125,6 +159,7 @@ class Config(object):
         "testfail" : TestFailTask,
         "rclone"   : RcloneTask,
         "backup"   : BackupTask,
+        "prune"    : PruneBackups,
         "check"    : CheckBackups
     }
 
