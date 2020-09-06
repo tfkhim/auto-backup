@@ -34,12 +34,12 @@ Usage
 Call the module an pass the path to a configuration file as
 sole argument
 
-    python -m auto-backup <config-file>
+    python -m auto_backup <config-file>
 
 You can execute a subset of all tasks by using the `--tag` option. This
 option can be given multiple times
 
-    python -m auto-backup --tag tag1 --tag tag2 <config-file>
+    python -m auto_backup --tag tag1 --tag tag2 <config-file>
 
 This will execute all tasks which have at least one of the two tags
 assigned to it.
@@ -191,8 +191,9 @@ Todo's
 * [x] Use poetry for environment management
 * [ ] Add [black](https://pypi.org/project/black/) and 
       [isort](https://pypi.org/project/isort/) lint support
-* [ ] Add [pytest](https://docs.pytest.org) unit tests and
+* [x] Add [pytest](https://docs.pytest.org) for unit tests and
       [pytest-cov](https://pypi.org/project/pytest-cov/) for coverage
+* [ ] Write more unit tests
 * [ ] Check for code style with 
       [pytest-isort](https://pypi.org/project/pytest-isort/) and
       [pytest-black](https://pypi.org/project/pytest-black/)

@@ -1,2 +1,3 @@
 __pycache__
 auto_backup.egg-info
+.coverage
