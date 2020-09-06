@@ -189,14 +189,14 @@ Todo's
 ------
 
 * [x] Use poetry for environment management
-* [ ] Add [black](https://pypi.org/project/black/) and 
+* [x] Add [black](https://pypi.org/project/black/) and
       [isort](https://pypi.org/project/isort/) lint support
 * [x] Add [pytest](https://docs.pytest.org) for unit tests and
       [pytest-cov](https://pypi.org/project/pytest-cov/) for coverage
-* [ ] Write more unit tests
-* [ ] Check for code style with 
+* [x] Check for code style with
       [pytest-isort](https://pypi.org/project/pytest-isort/) and
       [pytest-black](https://pypi.org/project/pytest-black/)
+* [ ] Write more unit tests
 * [ ] Use static types with [mypy](http://www.mypy-lang.org/)
 * [ ] Use [MutMut](https://pypi.org/project/mutmut/) for mutation testing
 * [ ] Git hooks with [pre-commit](https://pre-commit.com/)

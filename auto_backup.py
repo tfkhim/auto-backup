@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import toml
-import copy
-import json
-import asyncio
-import aioxmpp
 import argparse
+import asyncio
+import copy
 import datetime
 import itertools
-import traceback
+import json
+import os
 import subprocess
+import sys
+import traceback
+
+import aioxmpp
+import toml
+
 
 class TaskBase(object):
     def __init__(self, taskConfig, notify, *args, **kwargs):
@@ -37,22 +39,26 @@ class TaskBase(object):
             self.notify.send("Task failed: {}".format(self))
             return 1
 
+
 class TestFailTask(TaskBase):
     def execute(self):
         raise RuntimeError("Task failed")
+
 
 class RcloneTask(TaskBase):
     def execute(self):
         args = (
             "rclone",
             "--verbose",
-            "--config", self.configFile,
+            "--config",
+            self.configFile,
             "sync",
             self.source,
-            self.destination
+            self.destination,
         )
 
         subprocess.run(args, check=True)
+
 
 class BackupTask(TaskBase):
     def __init__(self, taskConfig, notify, config):
@@ -68,14 +74,7 @@ class BackupTask(TaskBase):
         excludes = zip(itertools.repeat("--exclude"), self.excludes)
         excludes = itertools.chain.from_iterable(excludes)
 
-        args = (
-            "borg",
-            "--verbose",
-            "create",
-            *excludes,
-            archive,
-            "."
-        )
+        args = ("borg", "--verbose", "create", *excludes, archive, ".")
 
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
@@ -84,6 +83,7 @@ class BackupTask(TaskBase):
             env["BORG_RSH"] = self.sshCommand
 
         subprocess.run(args, cwd=self.source, env=env, check=True)
+
 
 class PruneBackups(TaskBase):
     def __init__(self, taskConfig, notify, config):
@@ -94,12 +94,7 @@ class PruneBackups(TaskBase):
         self.password = repoConf["password"]
 
     def execute(self):
-        args = [
-            "borg",
-            "--verbose",
-            "prune",
-            "--list"
-        ]
+        args = ["borg", "--verbose", "prune", "--list"]
 
         if getattr(self, "dryRun", False):
             args.append("--dry-run")
@@ -121,19 +116,18 @@ class PruneBackups(TaskBase):
 
         subprocess.run(args, env=env, check=True)
 
+
 class CheckBackups(TaskBase):
     def __init__(self, taskConfig, notify, config):
         super().__init__(taskConfig, notify)
 
-        self.repositories = [dict(name=name, **config["repositories"][name]) for name in self.repositories]
+        self.repositories = [
+            dict(name=name, **config["repositories"][name])
+            for name in self.repositories
+        ]
 
     def countOne(self, repository, password):
-        args = (
-            "borg",
-            "list",
-            "--json",
-            repository
-        )
+        args = ("borg", "list", "--json", repository)
 
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = password
@@ -156,17 +150,19 @@ class CheckBackups(TaskBase):
         def formatLine(repo):
             numToday, total = self.countOne(repo["url"], repo["password"])
             return "{}: {} (24h) {} (total)".format(repo["name"], numToday, total)
+
         lines = [formatLine(repo) for repo in self.repositories]
 
         self.notify.send("Backup check results:\n{} ".format("\n".join(lines)))
 
+
 class Config(object):
-    TASK_FACTORIES={
-        "testfail" : TestFailTask,
-        "rclone"   : RcloneTask,
-        "backup"   : BackupTask,
-        "prune"    : PruneBackups,
-        "check"    : CheckBackups
+    TASK_FACTORIES = {
+        "testfail": TestFailTask,
+        "rclone": RcloneTask,
+        "backup": BackupTask,
+        "prune": PruneBackups,
+        "check": CheckBackups,
     }
 
     def __init__(self, tomlFile):
@@ -189,6 +185,7 @@ class Config(object):
             return Config.TASK_FACTORIES[tType](fullTaskConf, self.notify, self._config)
 
         return list(map(make_task, self._tasks))
+
 
 class Notifications(object):
     def __init__(self, account, password, recipient):
@@ -216,6 +213,7 @@ class Notifications(object):
             timestamp = now.strftime("")
             message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
         asyncio.run(self.__sendImpl(message))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Execute backup tasks")
