@@ -20,12 +20,13 @@ Features
 Setup
 -----
 
-The rclone and borg command line tools must be installed on the target
-machine. Clone this repository and install the module
+The poetry, rclone and borg command line tools must be installed on the
+target machine. Clone this repository and install it
 
-    python setup.py install
+    poetry install
 
-You should use a virtual environment for an isolated installation.
+This will create a virtual environment to isolate the installation and
+will download and install all dependencies listed in the poetry.lock file.
 
 Usage
 -----
@@ -187,7 +188,7 @@ respositories.
 Todo's
 ------
 
-* [ ] Use pipenv for environment management
+* [x] Use poetry for environment management
 * [ ] Add [black](https://pypi.org/project/black/) and 
       [isort](https://pypi.org/project/isort/) lint support
 * [ ] Add [pytest](https://docs.pytest.org) unit tests and
