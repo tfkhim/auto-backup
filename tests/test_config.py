@@ -27,15 +27,15 @@ def config(config_file):
 
 
 def test_notify_has_sender_set(config):
-    assert config.notify.sender == "sender@test-server.net"
+    assert config.notify.notification_sender.sender == "sender@test-server.net"
 
 
 def test_notify_has_password_set(config):
-    assert config.notify.password == "my-password"
+    assert config.notify.notification_sender.password == "my-password"
 
 
 def test_notify_has_recipient_set(config):
-    assert config.notify.recipient == "recipient@test-server.net"
+    assert config.notify.notification_sender.recipient == "recipient@test-server.net"
 
 
 def test_task_one_has_type_rclone(config):

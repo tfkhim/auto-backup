@@ -45,4 +45,4 @@ def test_failure_returns_one(failing_task):
 def test_failure_sends_exactly_one_notification(failing_task, notify):
     failing_task.safe_execute()
 
-    assert notify.send.call_count == 1
+    assert notify.task_failed.call_count == 1

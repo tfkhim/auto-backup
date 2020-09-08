@@ -36,7 +36,7 @@ class TaskBase(object):
             return 0
         except:
             traceback.print_exc()
-            self.notify.send("Task failed: {}".format(self))
+            self.notify.task_failed(self)
             return 1
 
 
@@ -153,7 +153,7 @@ class CheckBackups(TaskBase):
 
         lines = [formatLine(repo) for repo in self.repositories]
 
-        self.notify.send("Backup check results:\n{} ".format("\n".join(lines)))
+        self.notify.message("Backup check results:\n{} ".format("\n".join(lines)))
 
 
 class Config(object):
@@ -173,7 +173,9 @@ class Config(object):
     @property
     def notify(self):
         if not self._notify:
-            self._notify = Notifications(**self._config["XMPP"])
+            sender = XMPPnotifications(**self._config["XMPP"])
+            formatter = NotificationFormat()
+            self._notify = Notifications(sender, formatter)
         return self._notify
 
     @property
@@ -188,31 +190,69 @@ class Config(object):
 
 
 class Notifications(object):
+    def __init__(self, sender, formatter):
+        self.notification_sender = sender
+        self.formatter = formatter
+
+    def task_failed(self, task):
+        self.notification_sender.send(self.formatter.task_failed(task))
+
+    def message(self, message):
+        self.notification_sender.send(self.formatter.message(message))
+
+
+class XMPPnotifications(object):
     def __init__(self, account, password, recipient):
         self.sender = account
         self.password = password
         self.recipient = recipient
 
-    async def __sendImpl(self, message):
-        jid = jid = aioxmpp.JID.fromstr(self.sender)
+    def send(self, message):
+        asyncio.run(self._async_send(message))
+
+    async def _async_send(self, message):
+        client = self._setup_client()
+        message = self._prepare_message(message)
+        await self._connect_and_send(client, message)
+
+    def _setup_client(self):
+        jid = aioxmpp.JID.fromstr(self.sender)
         sec_layer = aioxmpp.make_security_layer(self.password)
+
+        return aioxmpp.PresenceManagedClient(jid, sec_layer)
+
+    def _prepare_message(self, message):
         recipient_jid = aioxmpp.JID.fromstr(self.recipient)
+        xmpp_msg = aioxmpp.Message(to=recipient_jid, type_=aioxmpp.MessageType.CHAT)
+        xmpp_msg.body[None] = message
+        return xmpp_msg
 
-        client = aioxmpp.PresenceManagedClient(jid, sec_layer)
-
+    async def _connect_and_send(self, client, message):
         async with client.connected() as stream:
-            xmppMsg = aioxmpp.Message(to=recipient_jid, type_=aioxmpp.MessageType.CHAT)
+            await stream.send(message)
 
-            xmppMsg.body[None] = message
 
-            await client.send(xmppMsg)
+class NotificationFormat(object):
+    def __init__(self, add_timestamp=True):
+        self.add_timestamp = add_timestamp
 
-    def send(self, message, with_time=True):
-        if with_time:
-            now = datetime.datetime.now()
-            timestamp = now.strftime("")
-            message = "{:%d.%m.%Y %H:%M} - {}".format(now, message)
-        asyncio.run(self.__sendImpl(message))
+    def task_failed(self, task):
+        return self.message(self._get_task_failed_string(task))
+
+    def message(self, message):
+        if self.add_timestamp:
+            now = self._get_current_time()
+            message = self._prepend_timestamp_to_message(now, message)
+        return message
+
+    def _get_task_failed_string(self, task):
+        return "Task failed: {}".format(task)
+
+    def _get_current_time(self):
+        return datetime.datetime.now()
+
+    def _prepend_timestamp_to_message(self, time, message):
+        return "{:%d.%m.%Y %H:%M} - {}".format(time, message)
 
 
 if __name__ == "__main__":
