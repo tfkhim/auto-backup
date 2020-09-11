@@ -157,36 +157,59 @@ class CheckBackups(TaskBase):
 
 
 class Config(object):
-    TASK_FACTORIES = {
-        "testfail": TestFailTask,
-        "rclone": RcloneTask,
-        "backup": BackupTask,
-        "prune": PruneBackups,
-        "check": CheckBackups,
-    }
-
     def __init__(self, tomlFile):
-        self._config = toml.load(tomlFile)
-        self._tasks = self._config.pop("tasks", [])
-        self._notify = None
-
-    @property
-    def notify(self):
-        if not self._notify:
-            sender = XMPPnotifications(**self._config["XMPP"])
-            formatter = NotificationFormat()
-            self._notify = Notifications(sender, formatter)
-        return self._notify
+        self.config = toml.load(tomlFile)
+        self.task_config_list = self.config.get("tasks", [])
+        self.notify = self._create_notification(self.config)
+        self.task_factory = self._create_task_factory(self.config, self.notify)
 
     @property
     def tasks(self):
         def make_task(taskConf):
             tType = taskConf["type"]
-            fullTaskConf = copy.copy(self._config.get(tType, {}))
+            fullTaskConf = copy.copy(self.config.get(tType, {}))
             fullTaskConf.update(taskConf)
-            return Config.TASK_FACTORIES[tType](fullTaskConf, self.notify, self._config)
+            return self.task_factory.create(tType, fullTaskConf)
 
-        return list(map(make_task, self._tasks))
+        return list(map(make_task, self.task_config_list))
+
+    @staticmethod
+    def _create_notification(config):
+        sender = XMPPnotifications(**config["XMPP"])
+        formatter = NotificationFormat()
+        return Notifications(sender, formatter)
+
+    @staticmethod
+    def _create_task_factory(config, notify):
+        factory = TaskFactory(config, notify)
+
+        default_factories = {
+            "testfail": TestFailTask,
+            "rclone": RcloneTask,
+            "backup": BackupTask,
+            "prune": PruneBackups,
+            "check": CheckBackups,
+        }
+        factory.add_task_types(default_factories.items())
+
+        return factory
+
+
+class TaskFactory(object):
+    def __init__(self, config, notify):
+        self.factories = dict()
+        self.config = config
+        self.notify = notify
+
+    def add_task_type(self, type_key, factory):
+        self.factories[type_key] = factory
+
+    def add_task_types(self, key_factory_pairs):
+        for type_key, factory in key_factory_pairs:
+            self.add_task_type(type_key, factory)
+
+    def create(self, type_key, task_config):
+        return self.factories[type_key](task_config, self.notify, self.config)
 
 
 class Notifications(object):
