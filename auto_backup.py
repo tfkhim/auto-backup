@@ -161,26 +161,34 @@ class Config(object):
         self.config = toml.load(tomlFile)
         self.task_config_list = self.config.get("tasks", [])
         self.notify = self._create_notification(self.config)
+        self.config_merger = self._create_config_merger(self.config)
         self.task_factory = self._create_task_factory(self.config, self.notify)
 
     @property
     def tasks(self):
-        def make_task(taskConf):
-            tType = taskConf["type"]
-            fullTaskConf = copy.copy(self.config.get(tType, {}))
-            fullTaskConf.update(taskConf)
-            return self.task_factory.create(tType, fullTaskConf)
+        def make_task(task_config):
+            task_type = self._get_task_type(task_config)
+            merged_config = self._merge_task_and_type_config(task_config)
+            return self.task_factory.create(task_type, merged_config)
 
         return list(map(make_task, self.task_config_list))
 
-    @staticmethod
-    def _create_notification(config):
+    def _get_task_type(self, task_config):
+        return task_config["type"]
+
+    def _merge_task_and_type_config(self, task_config):
+        task_type = self._get_task_type(task_config)
+        return self.config_merger.merge_with_task_config(task_type, task_config)
+
+    def _create_notification(self, config):
         sender = XMPPnotifications(**config["XMPP"])
         formatter = NotificationFormat()
         return Notifications(sender, formatter)
 
-    @staticmethod
-    def _create_task_factory(config, notify):
+    def _create_config_merger(self, config):
+        return TaskConfigMerger(config)
+
+    def _create_task_factory(self, config, notify):
         factory = TaskFactory(config, notify)
 
         default_factories = {
@@ -193,6 +201,22 @@ class Config(object):
         factory.add_task_types(default_factories.items())
 
         return factory
+
+
+class TaskConfigMerger(object):
+    def __init__(self, config):
+        self.config = config
+
+    def merge_with_task_config(self, task_type, task_config):
+        task_type_config = self._get_task_type_config(task_type)
+
+        merged_config = dict()
+        merged_config.update(task_type_config)
+        merged_config.update(task_config)
+        return merged_config
+
+    def _get_task_type_config(self, task_type):
+        return self.config.get(task_type, {})
 
 
 class TaskFactory(object):
