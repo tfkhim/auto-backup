@@ -156,53 +156,6 @@ class CheckBackups(TaskBase):
         self.notify.message("Backup check results:\n{} ".format("\n".join(lines)))
 
 
-class Config(object):
-    def __init__(self, tomlFile):
-        self.config = toml.load(tomlFile)
-        self.task_config_list = self.config.get("tasks", [])
-        self.notify = self._create_notification(self.config)
-        self.config_merger = self._create_config_merger(self.config)
-        self.task_factory = self._create_task_factory(self.config, self.notify)
-
-    @property
-    def tasks(self):
-        def make_task(task_config):
-            task_type = self._get_task_type(task_config)
-            merged_config = self._merge_task_and_type_config(task_config)
-            return self.task_factory.create(task_type, merged_config)
-
-        return list(map(make_task, self.task_config_list))
-
-    def _get_task_type(self, task_config):
-        return task_config["type"]
-
-    def _merge_task_and_type_config(self, task_config):
-        task_type = self._get_task_type(task_config)
-        return self.config_merger.merge_with_task_config(task_type, task_config)
-
-    def _create_notification(self, config):
-        sender = XMPPnotifications(**config["XMPP"])
-        formatter = NotificationFormat()
-        return Notifications(sender, formatter)
-
-    def _create_config_merger(self, config):
-        return TaskConfigMerger(config)
-
-    def _create_task_factory(self, config, notify):
-        factory = TaskFactory(config, notify)
-
-        default_factories = {
-            "testfail": TestFailTask,
-            "rclone": RcloneTask,
-            "backup": BackupTask,
-            "prune": PruneBackups,
-            "check": CheckBackups,
-        }
-        factory.add_task_types(default_factories.items())
-
-        return factory
-
-
 class TaskConfigMerger(object):
     def __init__(self, config):
         self.config = config
@@ -217,6 +170,24 @@ class TaskConfigMerger(object):
 
     def _get_task_type_config(self, task_type):
         return self.config.get(task_type, {})
+
+
+class MergingTaskFactory(object):
+    def __init__(self, factory, merger):
+        self.task_factory = factory
+        self.merger = merger
+
+    def create(self, task_config):
+        task_type = self._get_task_type(task_config)
+        merged_config = self._merge_task_and_type_config(task_config)
+        return self.task_factory.create(task_type, merged_config)
+
+    def _get_task_type(self, task_config):
+        return task_config["type"]
+
+    def _merge_task_and_type_config(self, task_config):
+        task_type = self._get_task_type(task_config)
+        return self.merger.merge_with_task_config(task_type, task_config)
 
 
 class TaskFactory(object):
@@ -302,19 +273,52 @@ class NotificationFormat(object):
         return "{:%d.%m.%Y %H:%M} - {}".format(time, message)
 
 
-if __name__ == "__main__":
+def create_notification(config):
+    sender = XMPPnotifications(**config["XMPP"])
+    formatter = NotificationFormat()
+    return Notifications(sender, formatter)
+
+
+def create_config_merger(config):
+    return TaskConfigMerger(config)
+
+
+def create_task_factory(config, notify):
+    factory = TaskFactory(config, notify)
+
+    default_factories = {
+        "testfail": TestFailTask,
+        "rclone": RcloneTask,
+        "backup": BackupTask,
+        "prune": PruneBackups,
+        "check": CheckBackups,
+    }
+    factory.add_task_types(default_factories.items())
+
+    return factory
+
+
+def main():
     parser = argparse.ArgumentParser(description="Execute backup tasks")
     parser.add_argument("--tag", dest="tags", action="append")
     parser.add_argument("config", nargs=1)
 
     args = parser.parse_args()
 
-    config = Config(args.config)
+    config = toml.load(args.config)
+    notify = create_notification(config)
+    merger = create_config_merger(config)
+    task_factory = create_task_factory(config, notify)
+    task_factory = MergingTaskFactory(task_factory, merger)
 
-    tasks = config.tasks
+    tasks = list(map(task_factory.create, config.get("tasks", [])))
 
     if args.tags:
         tasks = [t for t in tasks if t.isActive(args.tags)]
 
     for task in tasks:
         task.safe_execute()
+
+
+if __name__ == "__main__":
+    main()
