@@ -17,6 +17,9 @@ pytest-isort = "*"
 pytest-black = "*"
 black = {version = "*", allow-prereleases = true}
 
+[tool.poetry.scripts]
+autobkp = "auto_backup:main"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
