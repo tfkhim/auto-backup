@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from auto_backup import MergingTaskFactory, TaskFactory
+from auto_backup.config import MergingTaskFactory, TaskFactory
 
 
 @pytest.fixture

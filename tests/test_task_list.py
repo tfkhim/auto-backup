@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from auto_backup import TaskList
+from auto_backup.config import TaskList
 
 
 class MockTask(str):

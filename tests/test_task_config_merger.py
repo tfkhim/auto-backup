@@ -1,6 +1,6 @@
 import pytest
 
-from auto_backup import TaskConfigMerger
+from auto_backup.config import TaskConfigMerger
 
 
 @pytest.fixture
