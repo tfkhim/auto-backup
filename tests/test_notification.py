@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, Mock, call
 
 import pytest
 
-from auto_backup import Notifications
+from auto_backup.notifications import Notifications
 
 
 @pytest.fixture

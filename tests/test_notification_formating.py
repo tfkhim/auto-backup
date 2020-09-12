@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from auto_backup import NotificationFormat
+from auto_backup.notifications import NotificationFormat
 
 
 @pytest.fixture
