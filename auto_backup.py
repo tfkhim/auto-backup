@@ -160,16 +160,16 @@ class TaskConfigMerger(object):
     def __init__(self, config):
         self.config = config
 
-    def merge_with_task_config(self, task_type, task_config):
-        task_type_config = self._get_task_type_config(task_type)
+    def merge_with_task_config(self, config_section, task_config):
+        config_section = self._get_config_section(config_section)
 
         merged_config = dict()
-        merged_config.update(task_type_config)
+        merged_config.update(config_section)
         merged_config.update(task_config)
         return merged_config
 
-    def _get_task_type_config(self, task_type):
-        return self.config.get(task_type, {})
+    def _get_config_section(self, section):
+        return self.config.get(section, {})
 
 
 class MergingTaskFactory(object):
@@ -309,9 +309,9 @@ def main():
     notify = create_notification(config)
     merger = create_config_merger(config)
     task_factory = create_task_factory(config, notify)
-    task_factory = MergingTaskFactory(task_factory, merger)
+    merging_factory = MergingTaskFactory(task_factory, merger)
 
-    tasks = list(map(task_factory.create, config.get("tasks", [])))
+    tasks = list(map(merging_factory.create, config.get("tasks", [])))
 
     if args.tags:
         tasks = [t for t in tasks if t.isActive(args.tags)]
