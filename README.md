@@ -13,33 +13,24 @@ Features
 * Remove / prune old backups
 * Send notifications in case of an error or with a summary of the
   backups of the last 24 hours.
-* Use [XMPP](https://pypi.org/project/aioxmpp/) for notifications using
+* Uses [XMPP](https://pypi.org/project/aioxmpp/) for notifications
 * A single [TOML](https://pypi.org/project/toml/) file for configuring
   all tasks
-
-Setup
------
-
-The poetry, rclone and borg command line tools must be installed on the
-target machine. Clone this repository and install it
-
-    poetry install
-
-This will create a virtual environment to isolate the installation and
-will download and install all dependencies listed in the poetry.lock file.
 
 Usage
 -----
 
-Call the module an pass the path to a configuration file as
+Install the package into a virtual environment. The rclone and
+borg command line tools must be installed on the host. Then call
+the provided script and pass the path to a configuration file as
 sole argument
 
-    python -m auto_backup <config-file>
+    autobkp <config-file>
 
 You can execute a subset of all tasks by using the `--tag` option. This
 option can be given multiple times
 
-    python -m auto_backup --tag tag1 --tag tag2 <config-file>
+    autobkp --tag tag1 --tag tag2 <config-file>
 
 This will execute all tasks which have at least one of the two tags
 assigned to it.
@@ -184,6 +175,37 @@ as task type and provide the following key value pairs
 
 See the [backup task](#Backup-tasks) for information about
 respositories.
+
+Development
+-----------
+
+### Setup
+
+The poetry, rclone and borg command line tools must be installed on the
+target machine. Clone this repository and install it
+
+    poetry install
+
+This will create a virtual environment to isolate the installation and
+will download and install all dependencies listed in the poetry.lock file.
+
+### Build
+
+For creating distributions of the package us the following call
+
+    poetry build
+
+### Tests and formatting
+
+You can run the test suite with
+
+    poetry run pytest
+
+The test suite contains formatting checks. So you may have to call black and
+isort in the project directory first
+
+    poetry run black .
+    poetry run isort .
 
 Todo's
 ------
