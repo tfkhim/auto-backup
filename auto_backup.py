@@ -178,16 +178,11 @@ class MergingTaskFactory(object):
         self.merger = merger
 
     def create(self, task_config):
-        task_type = self._get_task_type(task_config)
         merged_config = self._merge_task_and_type_config(task_config)
-        return self.task_factory.create(task_type, merged_config)
-
-    def _get_task_type(self, task_config):
-        return task_config["type"]
+        return self.task_factory(merged_config)
 
     def _merge_task_and_type_config(self, task_config):
-        task_type = self._get_task_type(task_config)
-        return self.merger.merge_with_task_config(task_type, task_config)
+        return self.merger(task_config)
 
 
 class TaskFactory(object):
@@ -279,11 +274,13 @@ def create_notification(config):
     return Notifications(sender, formatter)
 
 
-def create_config_merger(config):
-    return TaskConfigMerger(config)
-
-
 def create_task_factory(config, notify):
+    internal_task_factory = create_internal_task_factory(config, notify)
+    merger = TaskConfigMerger(config)
+    return create_config_aware_mergin_factory(merger, internal_task_factory)
+
+
+def create_internal_task_factory(config, notify):
     factory = TaskFactory(config, notify)
 
     default_factories = {
@@ -298,6 +295,18 @@ def create_task_factory(config, notify):
     return factory
 
 
+def create_config_aware_mergin_factory(merger, task_factory):
+    merge_and_task_type_key = "type"
+
+    def task_from_type_factory(config):
+        return task_factory.create(config[merge_and_task_type_key], config)
+
+    def merge_using_config_key(config):
+        return merger.merge_with_task_config(config[merge_and_task_type_key], config)
+
+    return MergingTaskFactory(task_from_type_factory, merge_using_config_key)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Execute backup tasks")
     parser.add_argument("--tag", dest="tags", action="append")
@@ -307,11 +316,9 @@ def main():
 
     config = toml.load(args.config)
     notify = create_notification(config)
-    merger = create_config_merger(config)
-    task_factory = create_task_factory(config, notify)
-    merging_factory = MergingTaskFactory(task_factory, merger)
+    factory = create_task_factory(config, notify)
 
-    tasks = list(map(merging_factory.create, config.get("tasks", [])))
+    tasks = list(map(factory.create, config.get("tasks", [])))
 
     if args.tags:
         tasks = [t for t in tasks if t.isActive(args.tags)]

@@ -62,39 +62,34 @@ def test_config_passed_to_type_factory(
 
 @pytest.fixture
 def factory_mock():
-    factory = MagicMock()
-    factory.create = MagicMock(return_value="task-from-mock-factory")
-    return factory
+    return MagicMock(return_value="task-from-mock-factory")
 
 
 @pytest.fixture
-def merging():
-    merging = MagicMock()
-    merging.merge_with_task_config = MagicMock(return_value="merged-config")
-    return merging
+def merger():
+    return MagicMock(return_value="merged-config")
 
 
 @pytest.fixture
-def merging_factory(merging, factory_mock):
-    return MergingTaskFactory(factory_mock, merging)
+def merging_factory(merger, factory_mock):
+    return MergingTaskFactory(factory_mock, merger)
 
 
-@pytest.fixture
-def task_config_with_type():
-    return {"type": "test-type"}
-
-
-def test_merging_factory_returns_task_from_task_factory(
-    merging_factory, task_config_with_type
-):
-    task = merging_factory.create(task_config_with_type)
+def test_merging_factory_returns_task_from_task_factory(merging_factory, task_config):
+    task = merging_factory.create(task_config)
 
     assert task == "task-from-mock-factory"
 
 
-def test_task_gets_created_from_merged_config(
-    merging_factory, task_config_with_type, factory_mock
-):
-    merging_factory.create(task_config_with_type)
+def test_task_merger_called_with_task_config(merging_factory, task_config, merger):
+    merging_factory.create(task_config)
 
-    assert factory_mock.create.call_args == call("test-type", "merged-config")
+    assert merger.call_args == call(task_config)
+
+
+def test_task_gets_created_from_merged_config(
+    merging_factory, task_config, factory_mock
+):
+    merging_factory.create(task_config)
+
+    assert factory_mock.call_args == call("merged-config")
