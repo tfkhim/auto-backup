@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from auto_backup import TaskBase
+from auto_backup.tasks import TaskBase
 
 
 class TaskMock(TaskBase):

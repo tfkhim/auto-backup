@@ -2,15 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from auto_backup import (
-    BackupTask,
-    CheckBackups,
-    PruneBackups,
-    RcloneTask,
-    create_notification,
-    create_task_factory,
-    create_task_list,
-)
+from auto_backup import create_notification, create_task_factory, create_task_list
+from auto_backup.tasks import BackupTask, CheckBackups, PruneBackups, RcloneTask
 
 
 @pytest.fixture

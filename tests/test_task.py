@@ -1,6 +1,6 @@
 import pytest
 
-from auto_backup import TaskBase
+from auto_backup.tasks import TaskBase
 
 
 @pytest.fixture
