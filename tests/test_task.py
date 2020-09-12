@@ -47,16 +47,16 @@ def test_task_to_string_is_name(task):
 
 
 def test_task_is_active_with_single_tag(task):
-    assert task.isActive(["tag1"])
+    assert task.is_active(["tag1"])
 
 
 def test_task_is_active_list_with_one_matching_tag(task):
-    assert task.isActive(["tag2", "tag3"])
+    assert task.is_active(["tag2", "tag3"])
 
 
 def test_task_is_inactive_empty_input_list(task):
-    assert not task.isActive([])
+    assert not task.is_active([])
 
 
 def test_task_is_inactive_list_with_not_matching_tags(task):
-    assert not task.isActive(["tag3"])
+    assert not task.is_active(["tag3"])

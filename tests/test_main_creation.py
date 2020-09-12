@@ -9,12 +9,20 @@ from auto_backup import (
     RcloneTask,
     create_notification,
     create_task_factory,
+    create_task_list,
 )
 
 
 @pytest.fixture
 def notify():
     return MagicMock
+
+
+@pytest.fixture
+def task_factory():
+    factory = MagicMock()
+    factory.create = MagicMock(wraps=lambda c: c["name"])
+    return factory
 
 
 def config_type_pair(task_type, target_type):
@@ -68,3 +76,19 @@ def test_create_task_factory_default_factories(notify, task_config, target_type)
     factory = create_task_factory(config, notify)
 
     assert type(factory.create(task_config)) == target_type
+
+
+def test_create_task_list_without_task_section(task_factory):
+    config = {}
+
+    task_list = create_task_list(task_factory, config)
+
+    assert list(task_list) == []
+
+
+def test_create_task_list_from_task_section(task_factory):
+    config = {"tasks": [{"name": "task1"}, {"name": "task2"}]}
+
+    task_list = create_task_list(task_factory, config)
+
+    assert list(task_list) == ["task1", "task2"]

@@ -27,7 +27,7 @@ class TaskBase(object):
     def __str__(self):
         return self.name
 
-    def isActive(self, activeTags):
+    def is_active(self, activeTags):
         return not self.tags.isdisjoint(activeTags)
 
     def safe_execute(self):
@@ -202,6 +202,20 @@ class TaskFactory(object):
         return self.factories[type_key](task_config, self.notify, self.config)
 
 
+class TaskList(object):
+    def __init__(self, task_factory, config):
+        self.task_factory = task_factory
+        self.config = config
+        self.filter_func = lambda t: t
+
+    def __iter__(self):
+        created_tasks = map(self.task_factory, self.config)
+        return filter(self.filter_func, created_tasks)
+
+    def filter_by_tags(self, tags):
+        self.filter_func = lambda t: t.is_active(tags)
+
+
 class Notifications(object):
     def __init__(self, sender, formatter):
         self.notification_sender = sender
@@ -307,6 +321,18 @@ def create_config_aware_mergin_factory(merger, task_factory):
     return MergingTaskFactory(task_from_type_factory, merge_using_config_key)
 
 
+def create_task_list(factory, config):
+    return TaskList(factory.create, config.get("tasks", []))
+
+
+def execute_tasks(task_list, tags):
+    if tags:
+        task_list.filter_by_tags(tags)
+
+    for task in task_list:
+        task.safe_execute()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Execute backup tasks")
     parser.add_argument("--tag", dest="tags", action="append")
@@ -317,14 +343,9 @@ def main():
     config = toml.load(args.config)
     notify = create_notification(config)
     factory = create_task_factory(config, notify)
+    task_list = create_task_list(factory, config)
 
-    tasks = list(map(factory.create, config.get("tasks", [])))
-
-    if args.tags:
-        tasks = [t for t in tasks if t.isActive(args.tags)]
-
-    for task in tasks:
-        task.safe_execute()
+    execute_tasks(task_list, args.tags)
 
 
 if __name__ == "__main__":
