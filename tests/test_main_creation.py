@@ -68,7 +68,7 @@ def test_create_task_factory_default_factories(notify, task_config, target_type)
 
     factory = create_task_factory(config, notify)
 
-    assert type(factory.create(task_config)) == target_type
+    assert type(factory.create(task_config).command) == target_type
 
 
 def test_create_task_list_without_task_section(task_factory):

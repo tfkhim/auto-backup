@@ -1,45 +1,18 @@
+from unittest.mock import MagicMock
+
 import pytest
 
-from auto_backup.tasks import TaskBase
+from auto_backup.tasks import Task
 
 
 @pytest.fixture
-def config():
-    return {
-        "name": "task-name",
-        "tags": ["tag1", "tag2"],
-    }
+def tags():
+    return ["tag1", "tag2"]
 
 
 @pytest.fixture
-def task(config):
-    return TaskBase(config, None)
-
-
-def create_task(config):
-    return TaskBase(config, None)
-
-
-def test_task_expects_name_config(config):
-    del config["name"]
-
-    with pytest.raises(KeyError):
-        create_task(config)
-
-
-def test_task_expects_tags_config(config):
-    del config["tags"]
-
-    with pytest.raises(KeyError):
-        create_task(config)
-
-
-def test_task_add_configuration_as_members(config):
-    config["test_key"] = "test_value"
-
-    task = create_task(config)
-
-    assert task.test_key == "test_value"
+def task(tags):
+    return Task("task-name", tags, None, None)
 
 
 def test_task_to_string_is_name(task):

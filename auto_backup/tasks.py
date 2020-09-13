@@ -5,15 +5,15 @@ import os
 import subprocess
 import traceback
 
+from auto_backup.argument_assigner import assign_arguments_to_self
 
-class TaskBase(object):
-    def __init__(self, taskConfig, notify, *args, **kwargs):
-        self.name = taskConfig.pop("name")
-        self.tags = set(taskConfig.pop("tags"))
+
+class Task(object):
+    def __init__(self, name, tags, command, notify):
+        self.name = name
+        self.tags = set(tags)
+        self.command = command
         self.notify = notify
-
-        for key, value in taskConfig.items():
-            setattr(self, key, value)
 
     def __str__(self):
         return self.name
@@ -23,7 +23,7 @@ class TaskBase(object):
 
     def safe_execute(self):
         try:
-            self.execute()
+            self.command.execute()
             return 0
         except:
             traceback.print_exc()
@@ -31,12 +31,15 @@ class TaskBase(object):
             return 1
 
 
-class TestFailTask(TaskBase):
+class TestFailTask(object):
     def execute(self):
         raise RuntimeError("Task failed")
 
 
-class RcloneTask(TaskBase):
+class RcloneTask(object):
+    def __init__(self, configFile, source, destination):
+        assign_arguments_to_self()
+
     def execute(self):
         args = (
             "rclone",
@@ -51,9 +54,9 @@ class RcloneTask(TaskBase):
         subprocess.run(args, check=True)
 
 
-class BackupTask(TaskBase):
-    def __init__(self, taskConfig, notify, config):
-        super().__init__(taskConfig, notify)
+class BackupTask(object):
+    def __init__(self, source, repository, excludes, sshCommand, config):
+        assign_arguments_to_self()
 
         repoConf = config["repositories"][self.repository]
         self.url = repoConf["url"]
@@ -70,15 +73,17 @@ class BackupTask(TaskBase):
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
 
-        if hasattr(self, "sshCommand"):
+        if self.sshCommand:
             env["BORG_RSH"] = self.sshCommand
 
         subprocess.run(args, cwd=self.source, env=env, check=True)
 
 
-class PruneBackups(TaskBase):
-    def __init__(self, taskConfig, notify, config):
-        super().__init__(taskConfig, notify)
+class PruneBackups(object):
+    def __init__(
+        self, repository, dryRun, within, daily, weekly, monthly, sshCommand, config
+    ):
+        assign_arguments_to_self()
 
         repoConf = config["repositories"][self.repository]
         self.url = repoConf["url"]
@@ -87,13 +92,13 @@ class PruneBackups(TaskBase):
     def execute(self):
         args = ["borg", "--verbose", "prune", "--list"]
 
-        if getattr(self, "dryRun", False):
+        if self.dryRun:
             args.append("--dry-run")
         else:
             args.append("--stats")
 
         for flag in ("within", "daily", "weekly", "monthly"):
-            if hasattr(self, flag):
+            if getattr(self, flag):
                 args.append("--keep-{}".format(flag))
                 args.append(str(getattr(self, flag)))
 
@@ -102,15 +107,15 @@ class PruneBackups(TaskBase):
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
 
-        if hasattr(self, "sshCommand"):
+        if self.sshCommand:
             env["BORG_RSH"] = self.sshCommand
 
         subprocess.run(args, env=env, check=True)
 
 
-class CheckBackups(TaskBase):
-    def __init__(self, taskConfig, notify, config):
-        super().__init__(taskConfig, notify)
+class CheckBackups(object):
+    def __init__(self, repositories, sshCommand, notify, config):
+        assign_arguments_to_self()
 
         self.repositories = [
             dict(name=name, **config["repositories"][name])
@@ -123,7 +128,7 @@ class CheckBackups(TaskBase):
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = password
 
-        if hasattr(self, "sshCommand"):
+        if self.sshCommand:
             env["BORG_RSH"] = self.sshCommand
 
         result = subprocess.run(args, env=env, check=True, capture_output=True)

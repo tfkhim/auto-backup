@@ -2,23 +2,24 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from auto_backup.tasks import TaskBase
-
-
-class TaskMock(TaskBase):
-    def __init__(self, execute, notify):
-        config = {
-            "name": "TaskMock",
-            "tags": [],
-        }
-        super().__init__(config, notify)
-
-        self.execute = execute
+from auto_backup.tasks import Task
 
 
 @pytest.fixture
-def succeeding_task():
-    return TaskMock(lambda: None, None)
+def succeeding_command():
+    mock = MagicMock()
+    mock.execute = lambda: None
+    return mock
+
+
+@pytest.fixture
+def failing_command(succeeding_command):
+    def failing_execute():
+        raise RuntimeError()
+
+    mock = MagicMock()
+    mock.execute = failing_execute
+    return mock
 
 
 @pytest.fixture
@@ -27,11 +28,13 @@ def notify():
 
 
 @pytest.fixture
-def failing_task(notify):
-    def failing_execute():
-        raise RuntimeError()
+def succeeding_task(succeeding_command, notify):
+    return Task("succeeding", [], succeeding_command, notify)
 
-    return TaskMock(failing_execute, notify)
+
+@pytest.fixture
+def failing_task(failing_command, notify):
+    return Task("failing", [], failing_command, notify)
 
 
 def test_success_returns_zero(succeeding_task):

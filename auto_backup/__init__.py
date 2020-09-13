@@ -6,6 +6,7 @@ import datetime
 import toml
 
 from auto_backup.config import (
+    ConfigValueInjector,
     MergingTaskFactory,
     TaskConfigMerger,
     TaskFactory,
@@ -17,6 +18,7 @@ from auto_backup.tasks import (
     CheckBackups,
     PruneBackups,
     RcloneTask,
+    Task,
     TestFailTask,
 )
 from auto_backup.xmpp_notifications import XMPPnotifications
@@ -29,36 +31,59 @@ def create_notification(config):
 
 
 def create_task_factory(config, notify):
-    internal_task_factory = create_internal_task_factory(config, notify)
+    command_factory = create_command_factory(config, notify)
+    task_factory = create_config_aware_task_factory(notify)
     merger = TaskConfigMerger(config)
-    return create_config_aware_mergin_factory(merger, internal_task_factory)
+    return create_config_aware_mergin_factory(merger, task_factory, command_factory)
 
 
-def create_internal_task_factory(config, notify):
-    factory = TaskFactory(config, notify)
+def create_command_factory(config, notify):
+    def create_config_injector(factory):
+        return (
+            ConfigValueInjector(factory)
+            .provide_values(config=config, notify=notify)
+            .build
+        )
 
-    default_factories = {
+    default_commands = {
         "testfail": TestFailTask,
         "rclone": RcloneTask,
         "backup": BackupTask,
         "prune": PruneBackups,
         "check": CheckBackups,
     }
-    factory.add_task_types(default_factories.items())
+
+    factories = {
+        name: create_config_injector(factory)
+        for name, factory in default_commands.items()
+    }
+    factory = TaskFactory()
+    factory.add_task_types(factories.items())
 
     return factory
 
 
-def create_config_aware_mergin_factory(merger, task_factory):
+def create_config_aware_task_factory(notify):
+    task_name_key = "name"
+    task_tags_key = "tags"
+
+    def task_from_command(config, command):
+        return Task(config[task_name_key], config[task_tags_key], command, notify)
+
+    return task_from_command
+
+
+def create_config_aware_mergin_factory(merger, task_factory, command_factory):
     merge_and_task_type_key = "type"
 
-    def task_from_type_factory(config):
-        return task_factory.create(config[merge_and_task_type_key], config)
+    def task_from_config(config):
+        command = command_factory.create(config[merge_and_task_type_key], config)
+        return task_factory(config, command)
 
     def merge_using_config_key(config):
         return merger.merge_with_task_config(config[merge_and_task_type_key], config)
 
-    return MergingTaskFactory(task_from_type_factory, merge_using_config_key)
+    return MergingTaskFactory(task_from_config, merge_using_config_key)
 
 
 def create_task_list(factory, config):

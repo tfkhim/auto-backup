@@ -6,18 +6,8 @@ from auto_backup.config import MergingTaskFactory, TaskFactory
 
 
 @pytest.fixture
-def config():
-    return {"test-key": "test-value"}
-
-
-@pytest.fixture
-def notify():
-    return MagicMock()
-
-
-@pytest.fixture
-def factory(config, notify):
-    return TaskFactory(config, notify)
+def factory():
+    return TaskFactory()
 
 
 @pytest.fixture
@@ -50,14 +40,12 @@ def test_add_multiple_types(factory, type_factory, another_type_factory, task_co
     assert factory.create("another-type", task_config) == "another-task-created"
 
 
-def test_config_passed_to_type_factory(
-    factory, type_factory, task_config, config, notify
-):
+def test_config_passed_to_type_factory(factory, type_factory, task_config):
     factory.add_task_type("test-type", type_factory)
 
     factory.create("test-type", task_config)
 
-    type_factory.call_args == call(task_config, notify, config)
+    type_factory.call_args == call(task_config)
 
 
 @pytest.fixture
