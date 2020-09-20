@@ -3,12 +3,45 @@ auto-backup
 
 Python program for automating backup tasks.
 
+Work in progress
+----------------
+
+This is a work in progress project and there are some quality
+assurance related TODO's I would like to implement in the
+near future:
+
+* [x] Use poetry for environment management
+* [x] Add [black](https://pypi.org/project/black/) and
+      [isort](https://pypi.org/project/isort/) lint support
+* [x] Add [pytest](https://docs.pytest.org) for unit tests and
+      [pytest-cov](https://pypi.org/project/pytest-cov/) for coverage
+* [x] Check for code style with
+      [pytest-isort](https://pypi.org/project/pytest-isort/) and
+      [pytest-black](https://pypi.org/project/pytest-black/)
+* [ ] Write more unit tests
+    * The individual commands are a rather big blind spot in the
+      code coverage
+    * Some refactorings (dependency injection) are needed to
+      allow testing of individual commands in isolation
+* [ ] Look for code smells
+* [ ] Use static types with [mypy](http://www.mypy-lang.org/)
+* [ ] Use [MutMut](https://pypi.org/project/mutmut/) for mutation testing
+* [ ] GitHub Actions or Azure pipelie for continous integration
+    * Use different Python versions
+    * Use different operating system versions
+* [ ] Do some real E2E tests
+    * Use a docker container to run a XMPP server
+    * Map test config and directory structure into the container
+* [ ] Provide complete distribution package for a version on GitHub
+    * Maybe host a deb version there as well
+* [ ] Git hooks with [pre-commit](https://pre-commit.com/)
+
 Features
 --------
 
 * Synchronize remote data into a local copy using
-  [Rclone](https://rclone.org/). This can be used to get copies of contacts
-  and calendars using CardDAV and CalDAV protocols.
+  [Rclone](https://rclone.org/). This can be used to get copies of
+  contacts and calendars using CardDAV and CalDAV protocols.
 * Backup local data using [BorgBackup](https://www.borgbackup.org/).
 * Remove / prune old backups
 * Send notifications in case of an error or with a summary of the
@@ -206,21 +239,3 @@ isort in the project directory first
 
     poetry run black .
     poetry run isort .
-
-Todo's
-------
-
-* [x] Use poetry for environment management
-* [x] Add [black](https://pypi.org/project/black/) and
-      [isort](https://pypi.org/project/isort/) lint support
-* [x] Add [pytest](https://docs.pytest.org) for unit tests and
-      [pytest-cov](https://pypi.org/project/pytest-cov/) for coverage
-* [x] Check for code style with
-      [pytest-isort](https://pypi.org/project/pytest-isort/) and
-      [pytest-black](https://pypi.org/project/pytest-black/)
-* [ ] Write more unit tests
-* [ ] Use static types with [mypy](http://www.mypy-lang.org/)
-* [ ] Use [MutMut](https://pypi.org/project/mutmut/) for mutation testing
-* [ ] Git hooks with [pre-commit](https://pre-commit.com/)
-* [ ] GitHub Actions or Azure pipelie for continous integration
-* [ ] Provide complete distribution package on GitHub
