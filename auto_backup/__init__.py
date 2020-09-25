@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+from functools import cached_property
 
 import toml
 
@@ -24,28 +25,8 @@ from auto_backup.tasks import (
 from auto_backup.xmpp_notifications import XMPPnotifications
 
 
-def create_notification(config):
-    sender = XMPPnotifications(**config["XMPP"])
-    formatter = NotificationFormat()
-    return Notifications(sender, formatter)
-
-
-def create_task_factory(config, notify):
-    command_factory = create_command_factory(config, notify)
-    task_factory = create_config_aware_task_factory(notify)
-    merger = TaskConfigMerger(config)
-    return create_config_aware_mergin_factory(merger, task_factory, command_factory)
-
-
-def create_command_factory(config, notify):
-    def create_config_injector(factory):
-        return (
-            ConfigValueInjector(factory)
-            .provide_values(config=config, notify=notify)
-            .build
-        )
-
-    default_commands = {
+class ProgramSetup(object):
+    COMMANDS = {
         "testfail": TestFailTask,
         "rclone": RcloneTask,
         "backup": BackupTask,
@@ -53,41 +34,65 @@ def create_command_factory(config, notify):
         "check": CheckBackups,
     }
 
-    factories = {
-        name: create_config_injector(factory)
-        for name, factory in default_commands.items()
-    }
-    factory = TaskFactory()
-    factory.add_task_types(factories.items())
+    NOTIFICATION_KEY = "XMPP"
+    COMMAND_TYPE_KEY = "type"
+    TASKS_KEY = "tasks"
 
-    return factory
+    def __init__(self, config):
+        self.config = config
 
+    @cached_property
+    def notify(self):
+        formatter = NotificationFormat()
+        return Notifications(self.notification_sender, formatter)
 
-def create_config_aware_task_factory(notify):
-    task_name_key = "name"
-    task_tags_key = "tags"
+    @cached_property
+    def notification_sender(self):
+        injector = ConfigValueInjector(XMPPnotifications)
+        return injector.build(self.config[self.NOTIFICATION_KEY])
 
-    def task_from_command(config, command):
-        return Task(config[task_name_key], config[task_tags_key], command, notify)
+    @cached_property
+    def command_factory(self):
+        factory = TaskFactory()
+        for key, command_factory in self.COMMANDS.items():
+            config_injector = self._create_value_injector(command_factory)
+            factory.add_task_type(key, config_injector.build)
+        return factory
 
-    return task_from_command
+    def _create_value_injector(self, factory):
+        injector = ConfigValueInjector(factory)
+        injector.provide_values(config=self.config, notify=self.notify)
+        return injector
 
+    @cached_property
+    def task_factory(self):
+        return MergingTaskFactory(
+            self._task_factory_backend(), self._task_config_merger()
+        )
 
-def create_config_aware_mergin_factory(merger, task_factory, command_factory):
-    merge_and_task_type_key = "type"
+    def _task_factory_backend(self):
+        def task_from_config(task_config):
+            command_type = task_config[self.COMMAND_TYPE_KEY]
+            command = self.command_factory.create(command_type, task_config)
+            injector = ConfigValueInjector(Task)
+            injector.provide_values(command=command, notify=self.notify)
+            return injector.build(task_config)
 
-    def task_from_config(config):
-        command = command_factory.create(config[merge_and_task_type_key], config)
-        return task_factory(config, command)
+        return task_from_config
 
-    def merge_using_config_key(config):
-        return merger.merge_with_task_config(config[merge_and_task_type_key], config)
+    def _task_config_merger(self):
+        config_merger = TaskConfigMerger(self.config)
 
-    return MergingTaskFactory(task_from_config, merge_using_config_key)
+        def merge_task_config_with_section_from_config(task_config):
+            section = task_config[self.COMMAND_TYPE_KEY]
+            return config_merger.merge_with_task_config(section, task_config)
 
+        return merge_task_config_with_section_from_config
 
-def create_task_list(factory, config):
-    return TaskList(factory.create, config.get("tasks", []))
+    @cached_property
+    def task_list(self):
+        tasks = self.config.get(self.TASKS_KEY, [])
+        return TaskList(self.task_factory.create, tasks)
 
 
 def execute_tasks(task_list, tags):
@@ -106,9 +111,7 @@ def main():
     args = parser.parse_args()
 
     config = toml.load(args.config)
-    notify = create_notification(config)
-    factory = create_task_factory(config, notify)
-    task_list = create_task_list(factory, config)
+    task_list = ProgramSetup(config).task_list
 
     execute_tasks(task_list, args.tags)
 
