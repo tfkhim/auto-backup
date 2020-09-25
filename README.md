@@ -18,6 +18,9 @@ near future:
 * [x] Check for code style with
       [pytest-isort](https://pypi.org/project/pytest-isort/) and
       [pytest-black](https://pypi.org/project/pytest-black/)
+* [x] GitHub Actions or Azure pipelie for continous integration
+    * Use different Python versions
+    * Use different operating system versions
 * [ ] Write more unit tests
     * The individual commands are a rather big blind spot in the
       code coverage
@@ -26,9 +29,6 @@ near future:
 * [ ] Look for code smells
 * [ ] Use static types with [mypy](http://www.mypy-lang.org/)
 * [ ] Use [MutMut](https://pypi.org/project/mutmut/) for mutation testing
-* [ ] GitHub Actions or Azure pipelie for continous integration
-    * Use different Python versions
-    * Use different operating system versions
 * [ ] Do some real E2E tests
     * Use a docker container to run a XMPP server
     * Map test config and directory structure into the container

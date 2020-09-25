@@ -1,0 +1,46 @@
+name: Unit tests and linters
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.8, 3.7, 3.6]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        pip install poetry
+        poetry install
+
+    - name: Run pytest unit tests
+      run: |
+        poetry run pytest --cov
+
+    - name: Check code is formatted with black
+      if: always()
+      run: |
+        poetry run black --check --diff auto_backup tests
+
+    - name: Check imports are sorting with isort
+      if: always()
+      run: |
+        poetry run isort --check --diff auto_backup tests
+
+    - name: Lint with flake8
+      if: always()
+      run: |
+        poetry run flake8 --show-source --statistics auto_backup tests
