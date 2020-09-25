@@ -25,7 +25,7 @@ class Task(object):
         try:
             self.command.execute()
             return 0
-        except:
+        except Exception:
             traceback.print_exc()
             self.notify.task_failed(self)
             return 1

@@ -66,7 +66,7 @@ def command_factory_mock():
 def test_create_notification_sender(setup):
     sender = setup.notification_sender
 
-    assert sender != None
+    assert sender is not None
 
 
 def test_create_notification(setup):
@@ -74,7 +74,7 @@ def test_create_notification(setup):
 
     notify = setup.notify
 
-    assert notify != None
+    assert notify is not None
 
 
 @pytest.mark.parametrize(

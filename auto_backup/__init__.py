@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import datetime
 from functools import cached_property
 
 import toml

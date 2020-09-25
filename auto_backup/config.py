@@ -93,8 +93,9 @@ class ConfigValueInjector(object):
         return self._create_instance_from_values(values)
 
     def _fetch_values_for_factory_parameters(self, config):
-        fetch_value = lambda p: self._fetch_value_for_parameter(p, config)
-        return {p: fetch_value(p) for p in self.parameter_names}
+        return {
+            p: self._fetch_value_for_parameter(p, config) for p in self.parameter_names
+        }
 
     def _fetch_value_for_parameter(self, parameter, config):
         value_lookups = self._get_ordered_value_lookups(config)
