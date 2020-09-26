@@ -21,11 +21,12 @@ near future:
 * [x] GitHub Actions or Azure pipelie for continous integration
     * Use different Python versions
     * Use different operating system versions
-* [ ] Write more unit tests
-    * The individual commands are a rather big blind spot in the
-      code coverage
-    * Some refactorings (dependency injection) are needed to
-      allow testing of individual commands in isolation
+* [ ] Refactor the task.py module
+    * The individual commands are a rather big blind spot in
+      test coverage. But testability isn't good right now.
+    * Seperate concerns
+    * Use an abstraction for executing rclone and borg instead of
+      using the subprocess module directly
 * [ ] Look for code smells
 * [ ] Use static types with [mypy](http://www.mypy-lang.org/)
 * [ ] Use [MutMut](https://pypi.org/project/mutmut/) for mutation testing
@@ -234,8 +235,19 @@ You can run the test suite with
 
     poetry run pytest
 
-The test suite contains formatting checks. So you may have to call black and
-isort in the project directory first
+or
+
+    poetry run pytest --cov
+
+to report code coverage of test cases.
+
+The continuous integration workflow checks if the code is formatted using black and
+isort. So you should call both tools before commiting any changes:
 
     poetry run black .
     poetry run isort .
+
+The continuous integration pipeline also runs flake8 to look for issues in the
+source code. So make sure to run flake8 and fix any issues it reports:
+
+    poetry run flake8
