@@ -107,6 +107,15 @@ version = ">=0.6"
 python = "<3.7"
 
 [[package]]
+name = "cached-property"
+version = "1.5.2"
+description = "A decorator for caching properties in classes."
+category = "main"
+optional = false
+python-versions = "*"
+marker = "python_version < \"3.8\""
+
+[[package]]
 name = "cffi"
 version = "1.14.2"
 description = "Foreign Function Interface for Python calling C code."
@@ -574,7 +583,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 [metadata]
 lock-version = "1.0"
 python-versions = "^3.6"
-content-hash = "55e7e850e68e50010d7fb24ba138fce7ca19189ad7b7ffe53f61224600b34147"
+content-hash = "e5fbb3faf6c7c7171e021305649657dc35d9d0b06393bf51af1b72af317ad209"
 
 [metadata.files]
 aioopenssl = [
@@ -605,6 +614,10 @@ babel = [
 black = [
     {file = "black-20.8b1-py3-none-any.whl", hash = "sha256:70b62ef1527c950db59062cda342ea224d772abdf6adc58b86a45421bab20a6b"},
     {file = "black-20.8b1.tar.gz", hash = "sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea"},
+]
+cached-property = [
+    {file = "cached-property-1.5.2.tar.gz", hash = "sha256:9fa5755838eecbb2d234c3aa390bd80fbd3ac6b6869109bfc1b499f7bd89a130"},
+    {file = "cached_property-1.5.2-py2.py3-none-any.whl", hash = "sha256:df4f613cf7ad9a588cc381aaf4a512d26265ecebd5eb9e1ba12f1319eb85a6a0"},
 ]
 cffi = [
     {file = "cffi-1.14.2-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:da9d3c506f43e220336433dffe643fbfa40096d408cb9b7f2477892f369d5f82"},
