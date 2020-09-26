@@ -20,8 +20,10 @@ class FrameArgumentAssigner(object):
 
     def _check_that_target_argument_is_present(self):
         if self.target_argument_name not in self.arguments:
-            msg = "No '{}' argument found in function arguments"
-            raise KeyError(msg.format(self.target_argument_name))
+            raise KeyError(
+                f"No '{self.target_argument_name}' argument "
+                "found in function arguments"
+            )
 
     def _load_target_from_locals(self):
         self.target = self.locals[self.target_argument_name]

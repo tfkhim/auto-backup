@@ -63,7 +63,7 @@ class BackupTask(object):
         self.password = repoConf["password"]
 
     def execute(self):
-        archive = "{}::{{hostname}}-{{now}}".format(self.url)
+        archive = f"{self.url}::{{hostname}}-{{now}}"
 
         excludes = zip(itertools.repeat("--exclude"), self.excludes)
         excludes = itertools.chain.from_iterable(excludes)
@@ -99,7 +99,7 @@ class PruneBackups(object):
 
         for flag in ("within", "daily", "weekly", "monthly"):
             if getattr(self, flag):
-                args.append("--keep-{}".format(flag))
+                args.append(f"--keep-{flag}")
                 args.append(str(getattr(self, flag)))
 
         args.append(self.url)
@@ -145,8 +145,9 @@ class CheckBackups(object):
     def execute(self):
         def formatLine(repo):
             numToday, total = self.countOne(repo["url"], repo["password"])
-            return "{}: {} (24h) {} (total)".format(repo["name"], numToday, total)
+            return f"{repo['name']}: {numToday} (24h) {total} (total)"
 
         lines = [formatLine(repo) for repo in self.repositories]
 
-        self.notify.message("Backup check results:\n{} ".format("\n".join(lines)))
+        results = "\n".join(lines)
+        self.notify.message(f"Backup check results:\n{results}")

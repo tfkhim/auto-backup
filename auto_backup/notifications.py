@@ -27,10 +27,10 @@ class NotificationFormat(object):
         return message
 
     def _get_task_failed_string(self, task):
-        return "Task failed: {}".format(task)
+        return f"Task failed: {task}"
 
     def _get_current_time(self):
         return datetime.datetime.now()
 
     def _prepend_timestamp_to_message(self, time, message):
-        return "{:%d.%m.%Y %H:%M} - {}".format(time, message)
+        return f"{time:%d.%m.%Y %H:%M} - {message}"
