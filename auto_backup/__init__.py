@@ -18,7 +18,7 @@ from auto_backup.config import (
 )
 from auto_backup.notifications import NotificationFormat, Notifications
 from auto_backup.tasks import (
-    BackupTask,
+    BackupCommand,
     CheckBackups,
     PruneBackups,
     RcloneCommand,
@@ -32,7 +32,7 @@ class ProgramSetup(object):
     COMMANDS = {
         "testfail": TestFailTask,
         "rclone": RcloneCommand,
-        "backup": BackupTask,
+        "backup": BackupCommand,
         "prune": PruneBackups,
         "check": CheckBackups,
     }

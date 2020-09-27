@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import json
 import os
 import subprocess
@@ -31,8 +30,8 @@ class Task(object):
             return 1
 
 
-def run_checked_subprocess(args):
-    return subprocess.run(args, check=True)
+def run_checked_subprocess(args, **kwargs):
+    return subprocess.run(args, check=True, **kwargs)
 
 
 class TestFailTask(object):
@@ -60,8 +59,16 @@ class RcloneCommand(object):
         self.run_subprocess(args)
 
 
-class BackupTask(object):
-    def __init__(self, source, repository, excludes, sshCommand, config):
+class BackupCommand(object):
+    def __init__(
+        self,
+        source,
+        repository,
+        config,
+        excludes=[],
+        ssh_command=None,
+        run_subprocess=run_checked_subprocess,
+    ):
         assign_arguments_to_self()
 
         repoConf = config["repositories"][self.repository]
@@ -69,20 +76,39 @@ class BackupTask(object):
         self.password = repoConf["password"]
 
     def execute(self):
-        archive = f"{self.url}::{{hostname}}-{{now}}"
+        args = self._build_backup_command_call()
+        env = self._build_subprocess_environment()
+        self.run_subprocess(args, cwd=self.source, env=env)
 
-        excludes = zip(itertools.repeat("--exclude"), self.excludes)
-        excludes = itertools.chain.from_iterable(excludes)
+    def _build_backup_command_call(self):
+        backup_call = self._get_backup_call_base_arguments()
+        self._append_exclude_options(backup_call)
+        self._append_archive(backup_call)
+        self._append_directory(backup_call)
+        return tuple(backup_call)
 
-        args = ("borg", "--verbose", "create", *excludes, archive, ".")
+    def _get_backup_call_base_arguments(self):
+        return ["borg", "--verbose", "create"]
 
+    def _append_exclude_options(self, backup_call):
+        for exclude in self.excludes:
+            backup_call.append("--exclude")
+            backup_call.append(exclude)
+
+    def _append_archive(self, backup_call):
+        backup_call.append(f"{self.url}::{{hostname}}-{{now}}")
+
+    def _append_directory(self, backup_call):
+        backup_call.append(".")
+
+    def _build_subprocess_environment(self):
         env = os.environ.copy()
         env["BORG_PASSPHRASE"] = self.password
 
-        if self.sshCommand:
-            env["BORG_RSH"] = self.sshCommand
+        if self.ssh_command:
+            env["BORG_RSH"] = self.ssh_command
 
-        subprocess.run(args, cwd=self.source, env=env, check=True)
+        return env
 
 
 class PruneBackups(object):
