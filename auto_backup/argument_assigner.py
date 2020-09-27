@@ -3,13 +3,12 @@ import inspect
 
 class FrameArgumentAssigner(object):
     def __init__(self, stack_entry, target_argument_name):
-        self.frame = stack_entry.frame
         self.target_argument_name = target_argument_name
-        self._load_frame_info()
+        self._load_frame_info(stack_entry.frame)
         self._load_target_from_frame_info()
 
-    def _load_frame_info(self):
-        frame_info = inspect.getargvalues(self.frame)
+    def _load_frame_info(self, frame):
+        frame_info = inspect.getargvalues(frame)
 
         self.arguments = frame_info.args
         self.locals = frame_info.locals
