@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from auto_backup import ProgramSetup
-from auto_backup.tasks import BackupTask, CheckBackups, PruneBackups, RcloneTask
+from auto_backup.tasks import BackupTask, CheckBackups, PruneBackups, RcloneCommand
 
 
 @pytest.fixture
@@ -80,7 +80,7 @@ def test_create_notification(setup):
 @pytest.mark.parametrize(
     "command_type,target_type",
     [
-        ("rclone", RcloneTask),
+        ("rclone", RcloneCommand),
         ("backup", BackupTask),
         ("prune", PruneBackups),
         ("check", CheckBackups),

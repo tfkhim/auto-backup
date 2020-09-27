@@ -21,7 +21,7 @@ from auto_backup.tasks import (
     BackupTask,
     CheckBackups,
     PruneBackups,
-    RcloneTask,
+    RcloneCommand,
     Task,
     TestFailTask,
 )
@@ -31,7 +31,7 @@ from auto_backup.xmpp_notifications import XMPPnotifications
 class ProgramSetup(object):
     COMMANDS = {
         "testfail": TestFailTask,
-        "rclone": RcloneTask,
+        "rclone": RcloneCommand,
         "backup": BackupTask,
         "prune": PruneBackups,
         "check": CheckBackups,

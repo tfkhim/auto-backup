@@ -116,18 +116,18 @@ them. Put the shared data into a section named with the task type. You
 can override shared values in individual tasks
 
     [rclone]
-    configFile = "/my/rclone.conf"
+    config_file = "/my/rclone.conf"
 
     [[tasks]]
-    # This one will use the configFile given in the [rclone] section
+    # This one will use the config_file given in the [rclone] section
     type = "rclone"
     name = "Sync contact data"
 
     [[tasks]]
-    # Override configFile
+    # Override config_file
     type = "rclone"
     name = "Sync calendar data"
-    configFile = "/other/config/file.conf"
+    config_file = "/other/config/file.conf"
 
 ### Rclone tasks
 
@@ -139,7 +139,7 @@ key value pairs
     [[tasks]]
     type        = "rclone"
     name        = "Sync data"
-    configFile  = "/some/path/rclone.conf"
+    config_file  = "/some/path/rclone.conf"
     source      = "remote:path"
     destination = "/local/directory"
 

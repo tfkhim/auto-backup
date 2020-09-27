@@ -31,13 +31,19 @@ class Task(object):
             return 1
 
 
+def run_checked_subprocess(args):
+    return subprocess.run(args, check=True)
+
+
 class TestFailTask(object):
     def execute(self):
         raise RuntimeError("Task failed")
 
 
-class RcloneTask(object):
-    def __init__(self, configFile, source, destination):
+class RcloneCommand(object):
+    def __init__(
+        self, config_file, source, destination, run_subprocess=run_checked_subprocess
+    ):
         assign_arguments_to_self()
 
     def execute(self):
@@ -45,13 +51,13 @@ class RcloneTask(object):
             "rclone",
             "--verbose",
             "--config",
-            self.configFile,
+            self.config_file,
             "sync",
             self.source,
             self.destination,
         )
 
-        subprocess.run(args, check=True)
+        self.run_subprocess(args)
 
 
 class BackupTask(object):
