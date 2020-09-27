@@ -59,6 +59,20 @@ class RcloneCommand(object):
         self.run_subprocess(args)
 
 
+class BorgSubprocessEnvironment:
+    def __init__(self, password, ssh_command):
+        assign_arguments_to_self()
+
+    def build(self):
+        env = os.environ.copy()
+        env["BORG_PASSPHRASE"] = self.password
+
+        if self.ssh_command:
+            env["BORG_RSH"] = self.ssh_command
+
+        return env
+
+
 class BackupCommand(object):
     def __init__(
         self,
@@ -73,11 +87,13 @@ class BackupCommand(object):
 
         repoConf = config["repositories"][self.repository]
         self.url = repoConf["url"]
-        self.password = repoConf["password"]
+        self.subprocess_environment = BorgSubprocessEnvironment(
+            repoConf["password"], ssh_command
+        )
 
     def execute(self):
         args = self._build_backup_command_call()
-        env = self._build_subprocess_environment()
+        env = self.subprocess_environment.build()
         self.run_subprocess(args, cwd=self.source, env=env)
 
     def _build_backup_command_call(self):
@@ -101,48 +117,55 @@ class BackupCommand(object):
     def _append_directory(self, backup_call):
         backup_call.append(".")
 
-    def _build_subprocess_environment(self):
-        env = os.environ.copy()
-        env["BORG_PASSPHRASE"] = self.password
 
-        if self.ssh_command:
-            env["BORG_RSH"] = self.ssh_command
-
-        return env
-
-
-class PruneBackups(object):
+class PruneBackupsCommand(object):
     def __init__(
-        self, repository, dryRun, within, daily, weekly, monthly, sshCommand, config
+        self,
+        repository,
+        config,
+        within=None,
+        daily=None,
+        weekly=None,
+        monthly=None,
+        dry_run=False,
+        ssh_command=None,
+        run_subprocess=run_checked_subprocess,
     ):
         assign_arguments_to_self()
 
         repoConf = config["repositories"][self.repository]
         self.url = repoConf["url"]
-        self.password = repoConf["password"]
+        self.subprocess_environment = BorgSubprocessEnvironment(
+            repoConf["password"], ssh_command
+        )
 
     def execute(self):
-        args = ["borg", "--verbose", "prune", "--list"]
+        args = self._build_prune_command_call()
+        env = self.subprocess_environment.build()
+        self.run_subprocess(args, env=env)
 
-        if self.dryRun:
-            args.append("--dry-run")
-        else:
-            args.append("--stats")
+    def _build_prune_command_call(self):
+        prune_call = self._get_prune_call_base_arguments()
+        self._append_dry_run_or_stats(prune_call)
+        self._append_keep_options(prune_call)
+        self._append_repository_url(prune_call)
+        return tuple(prune_call)
 
-        for flag in ("within", "daily", "weekly", "monthly"):
-            if getattr(self, flag):
-                args.append(f"--keep-{flag}")
-                args.append(str(getattr(self, flag)))
+    def _get_prune_call_base_arguments(self):
+        return ["borg", "--verbose", "prune", "--list"]
 
-        args.append(self.url)
+    def _append_dry_run_or_stats(self, prune_call):
+        prune_call.append("--dry-run" if self.dry_run else "--stats")
 
-        env = os.environ.copy()
-        env["BORG_PASSPHRASE"] = self.password
+    def _append_keep_options(self, prune_call):
+        for option_name in ("within", "daily", "weekly", "monthly"):
+            option_value = getattr(self, option_name)
+            if option_value is not None:
+                prune_call.append(f"--keep-{option_name}")
+                prune_call.append(str(option_value))
 
-        if self.sshCommand:
-            env["BORG_RSH"] = self.sshCommand
-
-        subprocess.run(args, env=env, check=True)
+    def _append_repository_url(self, prune_call):
+        prune_call.append(self.url)
 
 
 class CheckBackups(object):

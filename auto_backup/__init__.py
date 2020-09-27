@@ -20,7 +20,7 @@ from auto_backup.notifications import NotificationFormat, Notifications
 from auto_backup.tasks import (
     BackupCommand,
     CheckBackups,
-    PruneBackups,
+    PruneBackupsCommand,
     RcloneCommand,
     Task,
     TestFailTask,
@@ -33,7 +33,7 @@ class ProgramSetup(object):
         "testfail": TestFailTask,
         "rclone": RcloneCommand,
         "backup": BackupCommand,
-        "prune": PruneBackups,
+        "prune": PruneBackupsCommand,
         "check": CheckBackups,
     }
 
