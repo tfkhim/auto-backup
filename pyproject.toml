@@ -9,6 +9,7 @@ license = "MIT"
 python = "^3.6"
 aioxmpp = ">=0.10.5"
 toml = ">=0.10.0"
+python-dateutil = ">=2.8.1"
 cached-property = { version = ">=1.5.2", python = "<3.8"}
 
 [tool.poetry.dev-dependencies]

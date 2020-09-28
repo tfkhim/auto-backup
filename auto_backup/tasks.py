@@ -4,6 +4,8 @@ import os
 import subprocess
 import traceback
 
+from dateutil.parser import isoparse
+
 from auto_backup.argument_assigner import assign_arguments_to_self
 
 
@@ -217,7 +219,7 @@ class CheckBackupsCommand(object):
 
     def _get_archive_dates(self, borg_list_output):
         start_dates_iso = map(lambda a: a["start"], borg_list_output["archives"])
-        return list(map(datetime.datetime.fromisoformat, start_dates_iso))
+        return list(map(isoparse, start_dates_iso))
 
     def _archives_within_24h(self, start_dates):
         now = datetime.datetime.now()
