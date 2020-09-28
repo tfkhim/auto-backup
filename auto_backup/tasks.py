@@ -168,8 +168,15 @@ class PruneBackupsCommand(object):
         prune_call.append(self.url)
 
 
-class CheckBackups(object):
-    def __init__(self, repositories, sshCommand, notify, config):
+class CheckBackupsCommand(object):
+    def __init__(
+        self,
+        repositories,
+        config,
+        notify,
+        ssh_command=None,
+        run_subprocess=run_checked_subprocess,
+    ):
         assign_arguments_to_self()
 
         self.repositories = [
@@ -177,32 +184,49 @@ class CheckBackups(object):
             for name in self.repositories
         ]
 
-    def countOne(self, repository, password):
-        args = ("borg", "list", "--json", repository)
-
-        env = os.environ.copy()
-        env["BORG_PASSPHRASE"] = password
-
-        if self.sshCommand:
-            env["BORG_RSH"] = self.sshCommand
-
-        result = subprocess.run(args, env=env, check=True, capture_output=True)
-
-        startDates = map(lambda a: a["start"], json.loads(result.stdout)["archives"])
-        startDates = list(map(datetime.datetime.fromisoformat, startDates))
-
-        now = datetime.datetime.now()
-        oneDay = datetime.timedelta(days=1)
-        numOneDay = sum(map(lambda d: 1 if now - d < oneDay else 0, startDates))
-
-        return (numOneDay, len(startDates))
-
     def execute(self):
-        def formatLine(repo):
-            numToday, total = self.countOne(repo["url"], repo["password"])
-            return f"{repo['name']}: {numToday} (24h) {total} (total)"
+        lines = [
+            self._get_message_line_for_repository(repo) for repo in self.repositories
+        ]
+        self.notify.message(self._format_final_message(lines))
 
-        lines = [formatLine(repo) for repo in self.repositories]
+    def _get_message_line_for_repository(self, repository):
+        num_today, total = self._count_archives_for_repository(repository)
+        return self._format_message_line(repository, num_today, total)
 
+    def _count_archives_for_repository(self, repository):
+        process_result = self._call_borg_list_for_repository(repository)
+        parsed_output = json.loads(process_result.stdout)
+        return self._sum_last_day_and_total(parsed_output)
+
+    def _call_borg_list_for_repository(self, repository):
+        args = self._build_list_command_call(repository["url"])
+        env = self._build_subprocess_environment(repository["password"])
+        return self.run_subprocess(args, env=env, capture_output=True)
+
+    def _build_list_command_call(self, repository):
+        return ("borg", "list", "--json", repository)
+
+    def _build_subprocess_environment(self, password):
+        return BorgSubprocessEnvironment(password, self.ssh_command).build()
+
+    def _sum_last_day_and_total(self, borg_list_output):
+        start_dates = self._get_archive_dates(borg_list_output)
+        num_today = self._archives_within_24h(start_dates)
+        return (num_today, len(start_dates))
+
+    def _get_archive_dates(self, borg_list_output):
+        start_dates_iso = map(lambda a: a["start"], borg_list_output["archives"])
+        return list(map(datetime.datetime.fromisoformat, start_dates_iso))
+
+    def _archives_within_24h(self, start_dates):
+        now = datetime.datetime.now()
+        one_day_delta = datetime.timedelta(days=1)
+        return sum(map(lambda d: 1 if now - d < one_day_delta else 0, start_dates))
+
+    def _format_message_line(self, repository, num_today, total):
+        return f"{repository['name']}: {num_today} (24h) {total} (total)"
+
+    def _format_final_message(self, lines):
         results = "\n".join(lines)
-        self.notify.message(f"Backup check results:\n{results}")
+        return f"Backup check results:\n{results}"

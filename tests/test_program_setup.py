@@ -5,7 +5,7 @@ import pytest
 from auto_backup import ProgramSetup
 from auto_backup.tasks import (
     BackupCommand,
-    CheckBackups,
+    CheckBackupsCommand,
     PruneBackupsCommand,
     RcloneCommand,
 )
@@ -88,7 +88,7 @@ def test_create_notification(setup):
         ("rclone", RcloneCommand),
         ("backup", BackupCommand),
         ("prune", PruneBackupsCommand),
-        ("check", CheckBackups),
+        ("check", CheckBackupsCommand),
     ],
 )
 def test_default_command_factories(setup, task_config, command_type, target_type):

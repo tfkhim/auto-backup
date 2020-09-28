@@ -19,7 +19,7 @@ from auto_backup.config import (
 from auto_backup.notifications import NotificationFormat, Notifications
 from auto_backup.tasks import (
     BackupCommand,
-    CheckBackups,
+    CheckBackupsCommand,
     PruneBackupsCommand,
     RcloneCommand,
     Task,
@@ -34,7 +34,7 @@ class ProgramSetup(object):
         "rclone": RcloneCommand,
         "backup": BackupCommand,
         "prune": PruneBackupsCommand,
-        "check": CheckBackups,
+        "check": CheckBackupsCommand,
     }
 
     NOTIFICATION_KEY = "XMPP"
