@@ -16,7 +16,7 @@ cached-property = { version = ">=1.5.2", python = "<3.8"}
 pytest = "*"
 pytest-cov = "*"
 isort = "*"
-black = {version = "*", allow-prereleases = true}
+black = "*"
 flake8 = "*"
 
 [tool.poetry.scripts]
