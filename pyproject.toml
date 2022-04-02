@@ -6,7 +6,7 @@ authors = ["Thomas Himmelstoss"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.2"
 aioxmpp = ">=0.10.5"
 toml = ">=0.10.0"
 python-dateutil = ">=2.8.1"
