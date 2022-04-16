@@ -3,6 +3,11 @@ auto-backup
 
 Python program for automating backup tasks.
 
+**A word of warning**: I used this project to try out recommendations
+from the book "Clean Code". I carried it to an extreme so the code is
+totally over-engineered. I will also replace it in my personal backup
+solution by [borgmatic](https://torsion.org/borgmatic/).
+
 Work in progress
 ----------------
 
